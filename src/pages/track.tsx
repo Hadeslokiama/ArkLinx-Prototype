@@ -60,6 +60,16 @@ export default function Track() {
                 <FleetMap trucks={[{ ...truck, lat: truck.lat + 0.012, lng: truck.lng - 0.008 }]} sites={trip.stops.map((s) => siteById[s.siteId])} className="h-80" label="Delayed 30 min · placeholder GPS" />
               </Panel>
             </div>
+            <Panel title="Proof photos" description="Docking photo and delivery receipt for each stop">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <p className="max-w-xl text-sm text-muted-foreground">
+                  Photos are shown only to the signed-in {trip.client} account that owns this order, so a forwarded tracking link never exposes the receipt.
+                </p>
+                <Button variant="outline" onClick={() => navigate("/partner")}>
+                  Sign in as {trip.client} to view
+                </Button>
+              </div>
+            </Panel>
           </>
         )}
       </main>

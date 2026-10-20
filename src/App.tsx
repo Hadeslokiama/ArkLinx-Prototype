@@ -22,6 +22,7 @@ const Maintenance = lazy(() => import("@/pages/office/maintenance"))
 const Ncap = lazy(() => import("@/pages/office/ncap"))
 const Overview = lazy(() => import("@/pages/office/overview"))
 const Reports = lazy(() => import("@/pages/office/reports"))
+const Security = lazy(() => import("@/pages/office/security"))
 const Sites = lazy(() => import("@/pages/office/sites"))
 const TripDetail = lazy(() => import("@/pages/office/trip-detail"))
 const Trips = lazy(() => import("@/pages/office/trips"))
@@ -48,6 +49,7 @@ export default function App() {
               <Route path="sites" element={<Sites />} />
               <Route path="truck-bans" element={<TruckBans />} />
               <Route path="alerts" element={<Alerts />} />
+              <Route path="security" element={<Security />} />
               <Route path="fleet" element={<Fleet />} />
               <Route path="maintenance" element={<Maintenance />} />
               <Route path="fuel" element={<FuelPage />} />

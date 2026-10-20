@@ -5,6 +5,7 @@ import { toast } from "sonner"
 import { Logo } from "@/components/app/brand"
 import { FleetMap } from "@/components/app/fleet-map"
 import { Panel, Stat } from "@/components/app/page"
+import { ProofGallery } from "@/components/app/proof-gallery"
 import { SimpleSelect } from "@/components/app/simple-select"
 import { StageTimeline, dwellFor } from "@/components/app/stage-timeline"
 import { TripStatusBadge } from "@/components/app/status"
@@ -18,8 +19,10 @@ import { cn } from "@/lib/utils"
 
 export default function PartnerPortal() {
   const [client, setClient] = useState<Client>("SCSM")
-  const mine = trips.filter((t) => t.client === client && t.date === TODAY)
-  const [openId, setOpenId] = useState<string | null>(mine[0]?.id ?? null)
+  const [q, setQ] = useState("")
+  const allMine = trips.filter((t) => t.client === client && t.date === TODAY)
+  const mine = q.trim() ? trips.filter((t) => t.client === client && t.trackingId.toLowerCase().includes(q.trim().toLowerCase())) : allMine
+  const [openId, setOpenId] = useState<string | null>(allMine[0]?.id ?? null)
   const delayed = mine.map((t) => {
     const tr = truckById[t.truckId]
     return { ...tr, lat: tr.lat + 0.012, lng: tr.lng - 0.008, lastPing: "30 min ago" }
@@ -76,16 +79,29 @@ export default function PartnerPortal() {
       <main className="mx-auto max-w-6xl space-y-5 px-4 py-6">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-brand-navy sm:text-3xl">{client} deliveries today</h1>
-          <p className="text-sm text-muted-foreground">Verified stages from CXBC trucks. Locations are shown 30 minutes delayed for crew and cargo safety.</p>
+          <p className="text-sm text-muted-foreground">Verified stages, docking photos and delivery receipts for your orders. Locations are shown 30 minutes delayed for crew and cargo safety.</p>
         </div>
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           <Stat label="Trucks on your trips" value={mine.length} tone="navy" />
-          <Stat label="Delivered today" value={mine.filter((t) => t.stops.some((s) => s.events.some((e) => e.stage === "Proof of Delivery"))).length} tone="success" />
+          <Stat label="Delivered today" value={mine.filter((t) => t.stops.some((s) => s.purpose === "Delivery" && s.events.some((e) => e.stage === "Release" && e.verdict !== "pending"))).length} tone="success" />
           <Stat label="Average time on site" value={fmtMin(dwells.length ? Math.round(dwells.reduce((a, b) => a + b, 0) / dwells.length) : 0)} />
-          <Stat label="Stages under review" value={mine.filter((t) => t.status === "held").length} tone="warning" sub="CXBC is checking the location" />
+          <Stat label="Stages under review" value={mine.filter((t) => t.status === "held").length} tone="warning" sub="CXBC is checking the location or receipt" />
         </div>
         <div className="grid gap-4 lg:grid-cols-[1fr_1.1fr]">
           <div className="space-y-3">
+            <form
+              className="flex gap-2"
+              onSubmit={(e) => {
+                e.preventDefault()
+                const hit = trips.find((t) => t.client === client && t.trackingId.toLowerCase() === q.trim().toLowerCase())
+                if (hit) setOpenId(hit.id)
+                else toast.error("No order with that tracking ID for your account.")
+              }}
+            >
+              <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Tracking ID, e.g. AXL-7Q4M-21" aria-label="Tracking ID" className="h-10 bg-card" />
+              <Button type="submit" className="h-10">Find</Button>
+            </form>
+            {q.trim() && !mine.length && <p className="text-sm text-muted-foreground">No order with that tracking ID for your account.</p>}
             {mine.map((t) => {
               const open = openId === t.id
               return (
@@ -102,6 +118,8 @@ export default function PartnerPortal() {
                   bodyClassName={open ? "" : "hidden"}
                 >
                   <StageTimeline stops={t.stops} compact />
+                  <h3 className="mt-4 mb-2 text-sm font-semibold text-brand-navy">Proof photos</h3>
+                  <ProofGallery trip={t} />
                   <Button
                     variant="outline"
                     size="sm"

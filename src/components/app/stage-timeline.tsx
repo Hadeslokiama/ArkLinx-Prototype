@@ -1,14 +1,13 @@
-import { CheckCircle2, Circle, Clock, MapPin } from "lucide-react"
+import { Camera, CheckCircle2, Circle, Clock, MapPin } from "lucide-react"
 import { VerdictBadge } from "@/components/app/status"
-import { STAGES, siteById, type Stop } from "@/data/mock"
+import { STAGES, photoFor, siteById, type Stop } from "@/data/mock"
 import { fmtMin, minutesBetween } from "@/lib/format"
 import { cn } from "@/lib/utils"
 
-const stopStages = (purpose: Stop["purpose"], first: boolean, last: boolean) =>
+const stopStages = (_purpose: Stop["purpose"], first: boolean, last: boolean) =>
   STAGES.filter((s) => {
     if (s === "Time In") return first
     if (s === "Time Out") return last
-    if (purpose === "Pickup" && (s === "Proof of Delivery" || s === "Proof Checking")) return false
     return true
   })
 
@@ -50,6 +49,12 @@ export function StageTimeline({ stops, compact = false, hideVerdicts = false }: 
                     <span className="flex items-center gap-2">
                       {done ? <CheckCircle2 className="size-4 text-success" /> : <Circle className="size-4 text-muted-foreground/50" />}
                       <span className={cn(!done && "text-muted-foreground")}>{stage}</span>
+                      {photoFor(stage, stop.purpose) && (
+                        <span className="inline-flex items-center gap-0.5 text-xs text-muted-foreground">
+                          <Camera className="size-3" />
+                          {photoFor(stage, stop.purpose) === "docking" ? "photo" : "receipt"}
+                        </span>
+                      )}
                       {e?.time && <span className="text-xs text-muted-foreground tabular-nums">{e.time}</span>}
                     </span>
                     {e && !hideVerdicts && <VerdictBadge verdict={e.verdict} />}

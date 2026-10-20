@@ -20,9 +20,9 @@ export default function Portal() {
       <main className="mx-auto max-w-6xl px-4 pb-16 sm:px-6">
         <section className="grid gap-8 py-8 lg:grid-cols-[1.1fr_1fr] lg:items-end lg:py-14">
           <div>
-            <h1 className="text-4xl font-semibold tracking-tight text-brand-navy sm:text-6xl">Every delivery stage, proven twice.</h1>
+            <h1 className="text-4xl font-semibold tracking-tight text-brand-navy sm:text-6xl">Signed at every stop. Checked by sources the crew don't control.</h1>
             <p className="mt-4 max-w-xl text-lg text-muted-foreground">
-              Dispatch, delivery-stage tracking and crew compliance for CXBC. A stage counts when the crew phone and the truck tracker agree.
+              Fleet management for CXBC. Each stage, docking photo and delivery receipt is signed on the crew's own phone, then checked against the tracker, the trip plan and the vendor's receipt format. Attacks on the system are contained in milliseconds.
             </p>
           </div>
           <form
@@ -67,7 +67,7 @@ export default function Portal() {
             <Smartphone className="size-8 text-brand-blue" />
             <div>
               <h2 className="text-xl font-semibold text-brand-navy">Driver and helper</h2>
-              <p className="mt-1 text-sm text-muted-foreground">Open from the trip link sent each morning. Big stage buttons, camera for proof of delivery.</p>
+              <p className="mt-1 text-sm text-muted-foreground">Open from the trip link each morning. Big stage buttons signed with the phone's screen lock; live camera for the docking photo and the delivery receipt at every store.</p>
             </div>
             <Button size="lg" variant="secondary" className="mt-auto h-11 text-base" onClick={() => navigate("/driver")}>
               Open today's trip <ArrowRight />
@@ -77,7 +77,7 @@ export default function Portal() {
             <Truck className="size-8 text-brand-blue" />
             <div>
               <h2 className="text-xl font-semibold text-brand-navy">SCSM and AAI</h2>
-              <p className="mt-1 text-sm text-muted-foreground">Verified delivery stages and truck requests in one place, instead of chasing updates on Viber.</p>
+              <p className="mt-1 text-sm text-muted-foreground">Truck requests and a tracking ID for every order, with verified stages, instead of chasing updates on Viber.</p>
             </div>
             <Button size="lg" variant="secondary" className="mt-auto h-11 text-base" onClick={() => navigate("/partner")}>
               Open partner view <ArrowRight />

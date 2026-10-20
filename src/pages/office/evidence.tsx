@@ -1,4 +1,4 @@
-import { CheckCircle2, MessageSquare, Smartphone, Truck, XCircle } from "lucide-react"
+import { CheckCircle2, CircleAlert, MessageSquare, ReceiptText, Smartphone, Truck, XCircle } from "lucide-react"
 import { useState } from "react"
 import { CircleMarker, Polyline, Tooltip } from "react-leaflet"
 import { toast } from "sonner"
@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Textarea } from "@/components/ui/textarea"
-import { crewById, siteById, truckById } from "@/data/mock"
+import { crewById, receiptConflict, siteById, truckById } from "@/data/mock"
 import { cn } from "@/lib/utils"
 
 const site = siteById.S04
@@ -32,8 +32,106 @@ const checks: { channel: string; check: string; result: "pass" | "fail"; detail:
 const history = [
   { when: "Oct 14, 14:02", trip: "TRP-1014-03", stage: "Release", truck: "T02", decision: "Rejected", by: "Operations 1", reason: "Tracker showed truck still at vendor; crew re-pressed on actual release." },
   { when: "Oct 11, 09:47", trip: "TRP-1011-01", stage: "Arrival", truck: "T03", decision: "Accepted", by: "Operations 2", reason: "Tracker lagged in basement parking; tracker caught up 3 min later." },
-  { when: "Oct 9, 16:31", trip: "TRP-1009-05", stage: "Proof of Delivery", truck: "T01", decision: "Accepted", by: "Christian B.", reason: "Phone accuracy 180 m inside mall; store confirmed receipt by call." },
+  { when: "Oct 9, 16:31", trip: "TRP-1009-05", stage: "Release (receipt)", truck: "T01", decision: "Accepted", by: "Christian B.", reason: "Phone accuracy 180 m inside mall; store confirmed receipt by call." },
 ]
+
+function ReceiptCase() {
+  const c = receiptConflict
+  const [reason, setReason] = useState("")
+  const [decided, setDecided] = useState<null | "Accepted" | "Rejected">(null)
+  const rec = c.capture
+  function decide(d: "Accepted" | "Rejected") {
+    if (reason.trim().length < 10) {
+      toast.error("Write a reason of at least 10 characters. It goes to the audit log.")
+      return
+    }
+    setDecided(d)
+    toast.success(d === "Rejected" ? "Stop rejected. Receipt number block-listed; billing stays held; playbook R2 opened." : "Stop accepted. Decision and reason written to the audit log.")
+  }
+  return (
+    <Panel
+      title={
+        <span className="flex flex-wrap items-center gap-2">
+          {c.tripId} · Release receipt at {siteById[c.siteId].name}
+          <VerdictBadge verdict="conflicting" />
+          {decided && <Pill tone={decided === "Accepted" ? "success" : "danger"}>{decided}</Pill>}
+        </span>
+      }
+      description={`${rec.plate} · ${rec.driver} with ${rec.helper} · truck has no tracker, so the receipt and photo checks carry this stop`}
+    >
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <div className="min-w-0 space-y-3">
+          <div className="rounded-md bg-muted/60 p-3">
+            <div className="flex items-center gap-2 font-medium text-brand-navy">
+              <ReceiptText className="size-4" /> Signed capture record
+            </div>
+            <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+              <dt className="text-muted-foreground">Latitude, longitude</dt><dd className="tabular-nums">{rec.lat}, {rec.lng} (±{rec.accuracyM} m)</dd>
+              <dt className="text-muted-foreground">Driver, helper</dt><dd>{rec.driver}, {rec.helper}</dd>
+              <dt className="text-muted-foreground">Site</dt><dd>{rec.site}</dd>
+              <dt className="text-muted-foreground">Date and time</dt><dd className="tabular-nums">{rec.date} {rec.time}</dd>
+              <dt className="text-muted-foreground">Order no.</dt><dd>{rec.orderNo}</dd>
+              <dt className="text-muted-foreground">Tracking ID</dt><dd>{rec.trackingId}</dd>
+              <dt className="text-muted-foreground">One-time code</dt><dd className="font-mono">{rec.code}</dd>
+              <dt className="text-muted-foreground">Photo SHA-256</dt><dd className="font-mono">{rec.sha256}</dd>
+              <dt className="text-muted-foreground">Signed by</dt><dd>{rec.device}</dd>
+            </dl>
+            <p className="mt-2 text-xs text-muted-foreground">Record signed with the KMS key and stored beside the photo; the photo bytes are unchanged.</p>
+          </div>
+          <div className="rounded-md bg-danger/8 p-3 text-sm">
+            <div className="font-medium text-danger">Receipt {c.receiptNo} was already used</div>
+            <p className="text-muted-foreground">
+              First accepted on {c.firstUsed.tripId} ({c.firstUsed.date}) at {c.firstUsed.site}, truck {c.firstUsed.plate}.
+            </p>
+          </div>
+        </div>
+        <div className="min-w-0 space-y-3">
+          <TableWrap>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Check</TableHead>
+                  <TableHead>Result</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {c.checks.map((k) => (
+                  <TableRow key={k.name}>
+                    <TableCell className="min-w-56">
+                      <div className="font-medium">
+                        {k.name}
+                        {k.advisory && <span className="ml-1 text-xs font-normal text-muted-foreground">(advisory, Python worker)</span>}
+                      </div>
+                      <div className="text-xs whitespace-normal text-muted-foreground">{k.detail}</div>
+                    </TableCell>
+                    <TableCell>
+                      {k.result === "pass" ? <CheckCircle2 className="size-4 text-success" /> : k.result === "warn" ? <CircleAlert className="size-4 text-warning" /> : <XCircle className="size-4 text-danger" />}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableWrap>
+          <div className="space-y-2">
+            <Label htmlFor="reason2">Decision reason (required, saved to the audit log)</Label>
+            <Textarea id="reason2" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="For example: called the Sucat receiving lead; no SCSM delivery received today from NCX 4726." />
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="destructive" disabled={!!decided} onClick={() => decide("Rejected")}>
+              <XCircle /> Reject stop
+            </Button>
+            <Button variant="outline" disabled={!!decided} onClick={() => decide("Accepted")}>
+              <CheckCircle2 /> Accept anyway
+            </Button>
+            <Button variant="ghost" onClick={() => toast.message("Crew asked for a new live receipt capture while still on site.")}>
+              <MessageSquare /> Ask for a new capture
+            </Button>
+          </div>
+        </div>
+      </div>
+    </Panel>
+  )
+}
 
 export default function Evidence() {
   const [reason, setReason] = useState("")
@@ -53,12 +151,12 @@ export default function Evidence() {
     <>
       <PageHeader
         title="Evidence review"
-        description="Stages whose location sources disagree. Neither the crew phone nor the tracker can confirm a stage alone; a person decides when they conflict."
+        description="Stops whose evidence conflicts: location sources that disagree, or a receipt or photo that fails a check. No single source confirms a stop; image checks are advisory; a person decides."
       />
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Stat label="Corroborated this week" value="142" tone="success" sub="Phone and tracker agree" />
         <Stat label="Single-source" value="61" tone="warning" sub="Trucks without a tracker" />
-        <Stat label="Conflicting" value={decided ? "0 open" : "1 open"} tone={decided ? "default" : "danger"} sub="3 resolved this week" />
+        <Stat label="Conflicting" value={decided ? "1 open" : "2 open"} tone="danger" sub="1 location, 1 receipt · 3 resolved this week" />
         <Stat label="Median review time" value="6 min" sub="From alert to decision" />
       </div>
 
@@ -150,6 +248,8 @@ export default function Evidence() {
           </div>
         </div>
       </Panel>
+
+      <ReceiptCase />
 
       <Panel title="Recent decisions">
         <TableWrap>

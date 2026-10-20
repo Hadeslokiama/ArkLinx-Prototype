@@ -7,7 +7,7 @@ import { SimpleSelect } from "@/components/app/simple-select"
 import { Button } from "@/components/ui/button"
 import { ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { dwellBySite, monthlyPnl, truckPnl } from "@/data/mock"
+import { dwellBySite, monthlyPnl, truckPnl, waitHeatmap } from "@/data/mock"
 import { peso, pesoShort } from "@/lib/format"
 
 const costCfg = {
@@ -102,7 +102,7 @@ export default function Reports() {
             </Table>
           </TableWrap>
         </Panel>
-        <Panel title="Average dwell by site" description="Arrival to Release. Normal is 30–60 minutes.">
+        <Panel title="Average time on site" description="Arrival to Release. Normal is 30–60 minutes.">
           <ChartContainer config={dwellCfg} className="h-[26rem] w-full">
             <BarChart data={[...dwellBySite].sort((a, b) => b.avg - a.avg)} layout="vertical" margin={{ left: 8, right: 16 }}>
               <XAxis type="number" tickLine={false} axisLine={false} />
@@ -113,6 +113,37 @@ export default function Reports() {
           </ChartContainer>
         </Panel>
       </div>
+      <Panel title="Waiting-time heatmap" description="Average minutes from Arrival to Docking by store and hour, this month. Totals only; cells with fewer than 5 visits are hidden. SCSM sees only its own stores.">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[40rem] border-separate border-spacing-1 text-xs">
+            <thead>
+              <tr>
+                <th className="text-left font-medium text-muted-foreground">Store</th>
+                {waitHeatmap.hours.map((h) => (
+                  <th key={h} className="font-medium text-muted-foreground">{Number(h) > 12 ? `${Number(h) - 12} PM` : Number(h) === 12 ? "12 PM" : `${h} AM`}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {waitHeatmap.rows.map((r) => (
+                <tr key={r.site}>
+                  <td className="pr-2 whitespace-nowrap text-brand-navy">{r.site}</td>
+                  {r.mins.map((m, i) => (
+                    <td
+                      key={i}
+                      title={m === null ? "Fewer than 5 visits" : `${m} min`}
+                      className="h-9 rounded text-center font-medium tabular-nums"
+                      style={m === null ? { background: "var(--muted)" } : { background: `color-mix(in oklab, var(--danger) ${Math.min(90, Math.round((m / 210) * 90))}%, var(--card))`, color: m > 120 ? "white" : undefined }}
+                    >
+                      {m ?? "·"}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Panel>
     </>
   )
 }

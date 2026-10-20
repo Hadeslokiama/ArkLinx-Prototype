@@ -48,7 +48,7 @@ export default function FuelPage() {
                     <TableCell>{truckById[r.truckId].plate}</TableCell>
                     <TableCell className="text-right tabular-nums">{r.km}</TableCell>
                     <TableCell>
-                      <Pill tone={r.kmSource === "Vectra route" ? "success" : "neutral"}>{r.kmSource}</Pill>
+                      <Pill tone={r.kmSource === "Vectras route" ? "success" : "neutral"}>{r.kmSource}</Pill>
                     </TableCell>
                     <TableCell className="text-right tabular-nums">{r.issuedL} L</TableCell>
                     <TableCell className="text-right tabular-nums">{r.receiptL} L</TableCell>
