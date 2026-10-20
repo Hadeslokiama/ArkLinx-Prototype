@@ -25,7 +25,7 @@ export default function Sites() {
     <>
       <PageHeader
         title="Sites and geofences"
-        description="Saved points of interest with a geofence each. Arrival and Proof of Delivery are confirmed against these perimeters; pins carry contacts and notes."
+        description="Saved points of interest with a geofence each. Arrival, the docking photo and the Release receipt are checked against these perimeters; pins carry contacts and notes."
         actions={
           <Button onClick={() => toast.message("Click on the map to drop a pin, then fill in the site profile.")}>
             <MapPinPlus /> Add site
