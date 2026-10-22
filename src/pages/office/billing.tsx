@@ -20,7 +20,7 @@ export default function Billing() {
         <Stat label="Trips on hold" value="1" sub="Conflicting stage under review" tone="warning" />
       </div>
       <Tabs defaultValue="invoices">
-        <TabsList className="flex-wrap">
+        <TabsList className="flex-wrap group-data-horizontal/tabs:h-auto">
           <TabsTrigger value="invoices">Invoices</TabsTrigger>
           <TabsTrigger value="receipts">Fuel receipts</TabsTrigger>
           <TabsTrigger value="recon">Trip reconciliation</TabsTrigger>

@@ -1,4 +1,4 @@
-import { Bot, CheckCircle2, ShieldCheck, ShieldOff, Siren, UserSearch } from "lucide-react"
+import { Bot, CheckCircle2, Fingerprint, Gavel, LockKeyhole, ShieldCheck, ShieldOff, Siren, Undo2, UserSearch, Wrench } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
 import { PageHeader, Panel, Placeholder, Stat, TableWrap } from "@/components/app/page"
@@ -9,7 +9,7 @@ import { SimpleSelect } from "@/components/app/simple-select"
 import { ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { attackActivity, attackerSession, decoys, guardBlocks, honeypotEvents, securityIncidents, suspiciousCases, triageLog } from "@/data/mock"
+import { attackActivity, attackerSession, autoRepairs, decisionQueue, decoys, guardBlocks, honeypotEvents, securityIncidents, suspiciousCases, techniqueHeat, triageLog, vulnerabilities, type ActorKind } from "@/data/mock"
 import { cn } from "@/lib/utils"
 
 const activityCfg = {
@@ -21,15 +21,28 @@ const activityCfg = {
 
 const ALLOWED = [
   "Block an address in the app and at Cloudflare",
-  "Revoke a session or freeze a passkey (staff confirm for crew)",
+  "Revoke a session or freeze a passkey (soft containment for employees; the admin approves or denies)",
   "Hold a trip and its billing",
   "Turn on a stricter WAF rule or Under Attack mode for a set time",
   "Rotate a touched honeytoken",
-  "Open an incident and draft the report and repair",
+  "Open an incident, recommend Approve or Deny, and draft the report (repairs come from a fixed list, never from the model)",
 ]
 
+const ZERO_TRUST = [
+  "Every request checked on its own: passkey session, role, order",
+  "Admin pages behind Cloudflare Access; no trusted office network",
+  "Fresh passkey signature for approve, deny, restore, role change",
+  "Running risk score per session: a rise asks for a passkey, then contains",
+  "Least privilege: Lambda functions read one photo by a short-lived link",
+]
+
+const actorTone: Record<ActorKind, "danger" | "warning" | "info"> = { Outsider: "danger", Employee: "warning", Crew: "info" }
+
 export default function Security() {
-  const [approved, setApproved] = useState<Record<string, boolean>>({})
+  const [decided, setDecided] = useState<Record<string, "approved" | "denied">>({})
+  const [undone, setUndone] = useState<Record<string, boolean>>({})
+  const [repairOk, setRepairOk] = useState<Record<string, boolean>>({})
+  const pending = decisionQueue.filter((d) => !decided[d.id]).length
   const [held, setHeld] = useState<Record<string, "approved" | "denied">>({})
   const [filter, setFilter] = useState("all")
   const events = honeypotEvents.filter((e) =>
@@ -39,22 +52,218 @@ export default function Security() {
     <>
       <PageHeader
         title="Security center"
-        description="Attacks on ArkLinx itself. Fixed rules contain them in milliseconds; decoys and honeytokens expose and slow them; a local Qwen3 model, behind a guard model, triages and drafts the repair. Staff approve every repair. ArkLinx never attacks back."
+        description="Zero trust: nothing is trusted by default, including staff accounts. Fixed rules contain attacks in milliseconds, decoys and honeytokens expose them, and damaged pages and records are repaired automatically from signed known-good copies. Every automatic action waits for an admin's Approve or Deny, because a flagged user may simply be an employee. ArkLinx never attacks back."
       />
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Stat label="Incidents this week" value={securityIncidents.length} tone="navy" sub="All contained" />
+        <Stat label="Awaiting your decision" value={pending} tone="navy" sub="Approve keeps an action; Deny undoes it" />
         <Stat label="Median time to contain" value="21 ms" tone="success" sub="Rules, before the model runs" />
+        <Stat label="Repaired automatically" value={autoRepairs.filter((r) => r.state === "Repaired").length} tone="success" sub="Defaced page back in 58 s" />
         <Stat label="Decoy and honeytoken hits" value={decoys.reduce((s, d) => s + d.hits, 0)} tone="warning" sub="Last 7 days" />
-        <Stat label="Open suspicious-activity cases" value={suspiciousCases.filter((c) => !c.status.startsWith("Closed")).length} sub="A person decides each" />
       </div>
 
-      <Tabs defaultValue="overview">
-        <TabsList className="flex-wrap">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
+      <Tabs defaultValue="decisions">
+        <TabsList className="flex-wrap group-data-horizontal/tabs:h-auto">
+          <TabsTrigger value="decisions">Decisions{pending > 0 && ` (${pending})`}</TabsTrigger>
+          <TabsTrigger value="overview">Incidents</TabsTrigger>
+          <TabsTrigger value="repairs">Repairs</TabsTrigger>
+          <TabsTrigger value="mitre">MITRE and CVE</TabsTrigger>
           <TabsTrigger value="honeypot">Honeypot log</TabsTrigger>
           <TabsTrigger value="replay">Session replay</TabsTrigger>
           <TabsTrigger value="triage">AI triage log</TabsTrigger>
         </TabsList>
+        <TabsContent value="decisions" className="mt-4 space-y-4">
+          <div className="grid gap-4 xl:grid-cols-[1.6fr_1fr]">
+            <div className="space-y-4">
+              {decisionQueue.map((d) => (
+                <Panel
+                  key={d.id}
+                  title={
+                    <span className="flex flex-wrap items-center gap-2">
+                      <Gavel className="size-4" /> {d.id} · {d.actor}
+                      <Pill tone={actorTone[d.actorKind]}>{d.actorKind}</Pill>
+                      <Pill tone="info">{d.technique}</Pill>
+                    </span>
+                  }
+                  description={`${d.time} · ${d.incident} · ${d.waiting}`}
+                  actions={decided[d.id] && <Pill tone={decided[d.id] === "approved" ? "success" : "neutral"}>{decided[d.id] === "approved" ? "Approved · signed" : "Denied · undone"}</Pill>}
+                >
+                  <p className="text-sm">{d.why}</p>
+                  <div className="mt-3 grid gap-3 md:grid-cols-2">
+                    <div className="rounded-md bg-success/8 p-3 text-sm">
+                      <div className="mb-0.5 font-medium text-brand-navy">Done automatically</div>
+                      {d.autoAction}
+                    </div>
+                    <div className="rounded-md bg-muted/60 p-3 text-sm">
+                      <div className="mb-0.5 font-medium text-brand-navy">If you deny</div>
+                      {d.denyUndoes}
+                    </div>
+                  </div>
+                  <div className="mt-3 flex items-start gap-2 rounded-md border p-3 text-sm">
+                    <Bot className="mt-0.5 size-4 shrink-0 text-brand-blue" />
+                    <div>
+                      <span className="font-medium">Triage recommends {d.recommendation}</span>{" "}
+                      <span className="text-muted-foreground">({Math.round(d.confidence * 100)}%)</span>
+                      <div className="text-muted-foreground">{d.note}</div>
+                    </div>
+                  </div>
+                  {!decided[d.id] && (
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          setDecided((s) => ({ ...s, [d.id]: "approved" }))
+                          toast.success("Approved and signed with your passkey. The action stays and the evidence package is sealed.")
+                        }}
+                      >
+                        <ShieldCheck /> Approve
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setDecided((s) => ({ ...s, [d.id]: "denied" }))
+                          toast.success(`Denied as a false alarm. ${d.denyUndoes}. Saved for rule tuning.`)
+                        }}
+                      >
+                        <Undo2 /> Deny (false alarm)
+                      </Button>
+                      <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <Fingerprint className="size-3.5" /> Needs your passkey
+                      </span>
+                    </div>
+                  )}
+                </Panel>
+              ))}
+            </div>
+            <div className="space-y-4">
+              <Panel title={<span className="flex items-center gap-2"><LockKeyhole className="size-4" /> Zero trust in ArkLinx</span>} description="NIST SP 800-207, applied as controls.">
+                <ul className="space-y-1.5 text-sm">
+                  {ZERO_TRUST.map((z) => (
+                    <li key={z} className="flex items-start gap-2">
+                      <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-success" /> {z}
+                    </li>
+                  ))}
+                </ul>
+              </Panel>
+              <Panel title="How containment scales" description="Rules act at once; the admin decides afterwards.">
+                <dl className="space-y-2 text-sm">
+                  <div><dt className="font-medium text-danger">Outsider</dt><dd className="text-muted-foreground">Blocked in the app and at Cloudflare, tarpitted, served decoys. Stays blocked until decided.</dd></div>
+                  <div><dt className="font-medium text-warning">Employee</dt><dd className="text-muted-foreground">Soft containment only: session revoked, fresh passkey, sensitive actions frozen. Never deleted. GM alerted after 30 min.</dd></div>
+                  <div><dt className="font-medium text-brand-blue">Crew evidence</dt><dd className="text-muted-foreground">Stop and billing held; new live capture requested while still on site.</dd></div>
+                </dl>
+              </Panel>
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="repairs" className="mt-4 space-y-4">
+          <Panel
+            title={<span className="flex items-center gap-2"><Wrench className="size-4" /> Automatic repairs</span>}
+            description="Restored from known-good copies: the signed release image, the hash-linked audit log, locked R2 versions and the approved configuration. A repair that could overwrite real staff work waits for approval."
+          >
+            <TableWrap>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Time</TableHead>
+                    <TableHead>Damage</TableHead>
+                    <TableHead>How it was found</TableHead>
+                    <TableHead>Repair</TableHead>
+                    <TableHead className="text-right">Took</TableHead>
+                    <TableHead>State</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {autoRepairs.map((r) => (
+                    <TableRow key={r.id}>
+                      <TableCell className="whitespace-nowrap tabular-nums">{r.time}</TableCell>
+                      <TableCell className="min-w-44 font-medium whitespace-normal">{r.what}</TableCell>
+                      <TableCell className="min-w-48 text-sm whitespace-normal text-muted-foreground">{r.detected}</TableCell>
+                      <TableCell className="min-w-56 text-sm whitespace-normal">{r.repair}</TableCell>
+                      <TableCell className="text-right tabular-nums">{r.tookS ? `${r.tookS} s` : "—"}</TableCell>
+                      <TableCell>
+                        {r.state === "Repaired" ? (
+                          undone[r.id] ? (
+                            <Pill tone="neutral">Undone by you</Pill>
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              <Pill tone="success">Repaired</Pill>
+                              <Button size="sm" variant="ghost" onClick={() => { setUndone((s) => ({ ...s, [r.id]: true })); toast.success("Repair undone. Logged with your passkey signature.") }}>
+                                <Undo2 /> Undo
+                              </Button>
+                            </div>
+                          )
+                        ) : repairOk[r.id] ? (
+                          <Pill tone="success">Restored · approved</Pill>
+                        ) : (
+                          <Button size="sm" onClick={() => { setRepairOk((s) => ({ ...s, [r.id]: true })); toast.success("Restore approved. Evidence re-verified; billing stays held until verified.") }}>
+                            <ShieldCheck /> Approve restore
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableWrap>
+          </Panel>
+        </TabsContent>
+
+        <TabsContent value="mitre" className="mt-4 space-y-4">
+          <div className="grid gap-4 2xl:grid-cols-[1fr_1.6fr]">
+            <Panel title="MITRE ATT&CK techniques seen, last 30 days" description="Each rule carries a fixed technique ID; the model may only suggest IDs that exist in the local ATT&CK copy.">
+              <ul className="space-y-2">
+                {techniqueHeat.map((t) => {
+                  const max = Math.max(...techniqueHeat.map((x) => x.count))
+                  return (
+                    <li key={t.id} className="text-sm">
+                      <div className="flex justify-between gap-2">
+                        <span><span className="font-mono text-xs">{t.id}</span> {t.name}</span>
+                        <span className="tabular-nums text-muted-foreground">{t.count}</span>
+                      </div>
+                      <div className="mt-1 h-2 rounded-full bg-muted">
+                        <div className="h-2 rounded-full bg-brand-blue" style={{ width: `${(t.count / max) * 100}%` }} />
+                      </div>
+                    </li>
+                  )
+                })}
+              </ul>
+            </Panel>
+            <Panel title="Vulnerabilities (CVE)" description="Probes caught by decoys, plus nightly composer audit, npm audit and Trivy. CISA's Known Exploited list comes first (patch within 7 days), then FIRST's EPSS.">
+              <TableWrap>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>CVE</TableHead>
+                      <TableHead>Where</TableHead>
+                      <TableHead className="text-right">CVSS</TableHead>
+                      <TableHead>Priority</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {vulnerabilities.map((v) => (
+                      <TableRow key={v.cve}>
+                        <TableCell className="whitespace-nowrap">
+                          <span className="font-mono text-xs font-medium">{v.cve}</span>
+                          <div className="text-xs text-muted-foreground">{v.component}</div>
+                        </TableCell>
+                        <TableCell className="min-w-44 text-sm whitespace-normal text-muted-foreground">{v.where}</TableCell>
+                        <TableCell className="text-right tabular-nums">{v.cvss}</TableCell>
+                        <TableCell>{v.kev ? <Pill tone="danger">CISA KEV</Pill> : <Pill tone="neutral">By EPSS</Pill>}</TableCell>
+                        <TableCell className="min-w-44 text-sm whitespace-normal">
+                          {v.status}
+                          {v.due !== "—" && <div className="text-xs text-warning">Due {v.due}</div>}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableWrap>
+            </Panel>
+          </div>
+        </TabsContent>
+
         <TabsContent value="overview" className="mt-4 space-y-4">
       <div className="grid gap-4 xl:grid-cols-[1.4fr_1fr]">
         <div className="space-y-4">
@@ -65,11 +274,11 @@ export default function Security() {
                 <span className="flex flex-wrap items-center gap-2">
                   <Siren className="size-4 text-danger" /> {inc.id} · {inc.title}
                   <SeverityPill severity={inc.severity} />
-                  <Pill tone="info">Playbook {inc.playbook}</Pill>
+                  <Pill tone="info">{inc.technique}</Pill>
                 </span>
               }
-              description={`${inc.time} · ${inc.source} · contained in ${inc.containedMs} ms`}
-              actions={<Pill tone={inc.status === "Contained" ? "success" : "warning"}>{inc.status}</Pill>}
+              description={`${inc.time} · ${inc.source} · contained in ${inc.containedMs} ms · playbook ${inc.playbook}`}
+              actions={<Pill tone={inc.status === "Under review" ? "warning" : "success"}>{inc.status}</Pill>}
             >
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
@@ -94,24 +303,7 @@ export default function Security() {
                   <p className="mt-2 text-muted-foreground">{inc.triage.summary}</p>
                 </div>
               </div>
-              <div className="mt-3 flex flex-wrap items-center gap-2">
-                {approved[inc.id] || inc.approval.startsWith("Approved") ? (
-                  <Pill tone="success">{approved[inc.id] ? "Repair approved by you · logged" : inc.approval}</Pill>
-                ) : (
-                  <>
-                    <Button
-                      size="sm"
-                      onClick={() => {
-                        setApproved((s) => ({ ...s, [inc.id]: true }))
-                        toast.success("Repair approved. Steps run and the evidence package is sealed with the KMS key.")
-                      }}
-                    >
-                      <ShieldCheck /> Approve repair
-                    </Button>
-                    <span className="text-xs text-muted-foreground">{inc.approval}</span>
-                  </>
-                )}
-              </div>
+              <div className="mt-3 text-xs text-muted-foreground">{inc.approval}</div>
             </Panel>
           ))}
         </div>
@@ -308,7 +500,7 @@ export default function Security() {
         </TabsContent>
 
         <TabsContent value="triage" className="mt-4 space-y-4">
-          <Panel title="AI triage log" description="Every Qwen3 run. Input uses IDs, not names; output must match the JSON schema; the model may only pick an allowed action; a person approves the repair.">
+          <Panel title="AI triage log" description="Every Qwen3 run. Input uses IDs, not names; output must match the JSON schema; the model may only pick an allowed action; the admin approves or denies each action.">
             <TableWrap>
               <Table>
                 <TableHeader>
@@ -338,7 +530,7 @@ export default function Security() {
                       <TableCell className="text-right tabular-nums">{r.latencyS} s</TableCell>
                       <TableCell className="min-w-36 text-xs whitespace-normal">
                         {r.action}
-                        <div className={r.approvedBy === "Pending" ? "text-warning" : "text-muted-foreground"}>{r.approvedBy === "Pending" ? "Awaiting approval" : `Approved by ${r.approvedBy}`}</div>
+                        <div className={r.approvedBy === "Pending" ? "text-warning" : "text-muted-foreground"}>{r.approvedBy === "Pending" ? "Awaiting admin decision" : `Approved by ${r.approvedBy}`}</div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -376,7 +568,7 @@ export default function Security() {
           </Panel>
         </TabsContent>
       </Tabs>
-      <Placeholder>Prototype data. The real triage runs Qwen3 on CXBC's own server through Ollama; nothing here calls a model.</Placeholder>
+      <Placeholder>Prototype data. The real triage runs a fine-tuned Qwen3 with llama.cpp on AWS Lambda in CXBC's own account; nothing here calls a model.</Placeholder>
     </>
   )
 }

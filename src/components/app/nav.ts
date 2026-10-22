@@ -40,7 +40,7 @@ export const navGroups: { label: string; items: NavItem[] }[] = [
       { title: "Dispatch", path: "/office/dispatch", icon: ClipboardList, roles: ["gm", "dispatcher", "admin"], badge: "2" },
       { title: "Trips", path: "/office/trips", icon: Route, roles: ["gm", "dispatcher", "billing", "admin"] },
       { title: "Evidence review", path: "/office/evidence", icon: ShieldAlert, roles: ["gm", "dispatcher", "admin"], badge: "2" },
-      { title: "Security center", path: "/office/security", icon: ShieldCheck, roles: ["gm", "admin"], badge: "1" },
+      { title: "Security center", path: "/office/security", icon: ShieldCheck, roles: ["gm", "admin"], badge: "3" },
       { title: "Sites and geofences", path: "/office/sites", icon: MapPinned, roles: ["gm", "dispatcher", "admin"] },
       { title: "Truck-ban notices", path: "/office/truck-bans", icon: CalendarClock, roles: ["gm", "dispatcher", "admin"] },
       { title: "Alert rules", path: "/office/alerts", icon: Bell, roles: ["gm", "dispatcher", "admin"] },

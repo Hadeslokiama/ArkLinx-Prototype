@@ -65,7 +65,7 @@ export default function Maintenance() {
         <Stat label="Parts to reorder" value={parts.filter((p) => p.qty <= p.reorderAt).length} />
       </div>
       <Tabs defaultValue="schedule">
-        <TabsList className="flex-wrap">
+        <TabsList className="flex-wrap group-data-horizontal/tabs:h-auto">
           <TabsTrigger value="schedule">Service forecast</TabsTrigger>
           <TabsTrigger value="orders">Work orders</TabsTrigger>
           <TabsTrigger value="parts">Parts inventory</TabsTrigger>

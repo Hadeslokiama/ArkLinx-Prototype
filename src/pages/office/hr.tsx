@@ -50,7 +50,7 @@ export default function HR() {
         <Stat label="Unsigned documents" value={hrDocuments.reduce((s, d) => s + d.total - d.signed, 0)} />
       </div>
       <Tabs defaultValue="onboarding">
-        <TabsList className="flex-wrap">
+        <TabsList className="flex-wrap group-data-horizontal/tabs:h-auto">
           <TabsTrigger value="onboarding">Onboarding</TabsTrigger>
           <TabsTrigger value="timesheets">Timesheets</TabsTrigger>
           <TabsTrigger value="reviews">Reviews</TabsTrigger>
