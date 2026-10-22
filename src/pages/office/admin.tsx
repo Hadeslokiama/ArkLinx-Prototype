@@ -18,7 +18,7 @@ export default function Admin() {
     <>
       <PageHeader title="Administration" description="Users and sign-in methods, the role access matrix, the audit log, integrations, keys, privacy and retention, receipt templates and settings." />
       <Tabs defaultValue="users">
-        <TabsList className="flex-wrap">
+        <TabsList className="flex-wrap group-data-horizontal/tabs:h-auto">
           <TabsTrigger value="users">Users</TabsTrigger>
           <TabsTrigger value="roles">Role access</TabsTrigger>
           <TabsTrigger value="audit">Audit log</TabsTrigger>
@@ -143,18 +143,19 @@ export default function Admin() {
                 <li>R2 with bucket locks (photos, backups, log anchors)</li>
               </ul>
             </Panel>
-            <Panel title="AWS Lightsail" description="Singapore · 8 GB · fixed US$44/month" actions={<Pill tone="success">Healthy</Pill>}>
+            <Panel title="AWS Lightsail" description="Singapore · 4 GB · fixed US$24/month" actions={<Pill tone="success">Healthy</Pill>}>
               <ul className="space-y-1 text-sm text-muted-foreground">
                 <li>Laravel, PostgreSQL + PostGIS, Redis, Reverb</li>
-                <li>Budget alerts at US$50 and US$60</li>
+                <li>Budget alerts at US$40 and US$50</li>
                 <li>Daily snapshots; database archived to R2</li>
               </ul>
             </Panel>
-            <Panel title="AI and image workers" description="On the same server" actions={<Pill tone="success">Running</Pill>}>
+            <Panel title="AWS Lambda" description="Singapore · Arm · billed per use, free tier" actions={<Pill tone="success">Running</Pill>}>
               <ul className="space-y-1 text-sm text-muted-foreground">
-                <li>Ollama: Qwen3-1.7B (fine-tuned, hash-pinned) + Qwen3Guard</li>
-                <li>Python worker: hashing, PaddleOCR (plates, receipts), truck and cargo detection, liveness score, JPEG XL archive</li>
-                <li>All results advisory; rules decide</li>
+                <li>triage: llama.cpp with Qwen3Guard, then Qwen3-1.7B (fine-tuned, image pinned by digest)</li>
+                <li>image-check: Python, RapidOCR PP-OCRv5 (plates, receipts), MobileNetV3 cargo and liveness checks</li>
+                <li>page-check: every minute, page hashes against the signed release</li>
+                <li>All results advisory; rules decide; concurrency capped</li>
               </ul>
             </Panel>
             <Panel title="Email (Amazon SES)" description="Alert delivery" actions={<Pill tone="success">Ready</Pill>}>

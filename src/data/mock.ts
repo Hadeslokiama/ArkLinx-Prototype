@@ -566,7 +566,7 @@ export interface CaptureRecord {
   device: string
 }
 
-// Advisory image checks from the Python worker. None of them decides a verdict on its own.
+// Advisory image checks from the image-check function (Python on AWS Lambda). None of them decides a verdict on its own.
 export interface ImageCheck {
   name: string
   result: "pass" | "warn" | "fail"
@@ -605,26 +605,105 @@ export const receiptConflict = {
 
 export const securityIncidents = [
   {
-    id: "INC-2610-07", time: "02:14:09", playbook: "R3", title: "Credential stuffing on the office login", status: "Contained", severity: "high" as const,
+    id: "INC-2610-07", time: "02:14:09", playbook: "R3", title: "Credential stuffing on the office login", status: "Contained", severity: "high" as const, technique: "T1110.004 Credential Stuffing",
     source: "45 addresses, 3 countries", containedMs: 38,
     actions: ["Blocked 45 addresses in the app (Redis) and at Cloudflare", "Turned on stricter WAF login rule for 2 h", "No account locked: all attempts failed Turnstile or MFA"],
     triage: { guard: "Passed (no injection found)", attackClass: "credential_stuffing", confidence: 0.94, playbook: "R3-bot-login", summary: "Automated login attempts from a residential proxy pool. No valid credentials used; passkey accounts unaffected. Recommend keeping the stricter rule 24 h." },
-    approval: "Awaiting staff approval",
+    approval: "Awaiting admin decision",
   },
   {
-    id: "INC-2610-06", time: "Yesterday 23:41", playbook: "R3", title: "AI agent probed /.env decoy and used a fake key", status: "Contained", severity: "high" as const,
+    id: "INC-2610-08", time: "04:02:51", playbook: "R4", title: "Public tracking page defaced", status: "Repaired", severity: "high" as const, technique: "T1491.001 Internal Defacement",
+    source: "Page check (AWS Lambda, every minute)", containedMs: 64,
+    actions: ["Hash of /track did not match the signed release", "Redeployed the pinned image and purged Cloudflare's cache: page back in 58 s", "Upload session that changed the banner revoked"],
+    triage: { guard: "Passed", attackClass: "defacement", confidence: 0.92, playbook: "R4-defacement", summary: "Banner text was replaced through a stolen partner session. Known-good copy restored; rotate that partner's session keys." },
+    approval: "Repaired automatically · Undo available",
+  },
+  {
+    id: "INC-2610-06", time: "Yesterday 23:41", playbook: "R3", title: "AI agent probed /.env decoy and used a fake key", status: "Contained", severity: "high" as const, technique: "T1552.001 Credentials In Files",
     source: "1 address · answered in 0.9 s (agent-like)", containedMs: 21,
     actions: ["Served decoy .env with honeytoken keys", "Honeytoken key used on /api/v1/export: blocked in the app and at Cloudflare", "Tarpit slowed 214 further requests"],
     triage: { guard: "Flagged: request text contained 'ignore previous instructions' (prompt injection aimed at our model)", attackClass: "ai_agent_recon", confidence: 0.89, playbook: "R3-decoy-hit", summary: "Scripted agent followed the decoy's canary instruction, confirming automation. No real data reached. Rotate the touched honeytoken." },
     approval: "Approved by Christian B. 07:02",
   },
   {
-    id: "INC-2610-05", time: "Yesterday 15:20", playbook: "R2", title: "Receipt number reused at SM Supermarket Sucat", status: "Under review", severity: "medium" as const,
+    id: "INC-2610-05", time: "Yesterday 15:20", playbook: "R2", title: "Receipt number reused at SM Supermarket Sucat", status: "Under review", severity: "medium" as const, technique: "E3 Reused receipt (ArkLinx ID)",
     source: "Crew phone · TRP-1016-05", containedMs: 9,
     actions: ["Held stop and billing", "Asked crew for a new live receipt capture"],
     triage: { guard: "Passed", attackClass: "evidence_fraud_receipt", confidence: 0.77, playbook: "R2-falsified-evidence", summary: "Receipt number matches an accepted Oct 14 receipt at the same store. Docking photo cargo check suggests an empty bay. Call the store to confirm today's delivery." },
     approval: "Dispatcher reviewing",
   },
+]
+
+// Automatic actions waiting for an admin. Approve keeps them; Deny undoes them (a false alarm, often an employee).
+export type ActorKind = "Outsider" | "Employee" | "Crew"
+export interface PendingDecision {
+  id: string
+  time: string
+  actor: string
+  actorKind: ActorKind
+  incident: string
+  technique: string
+  why: string
+  autoAction: string
+  denyUndoes: string
+  recommendation: "Approve" | "Deny"
+  confidence: number
+  note: string
+  waiting: string
+}
+export const decisionQueue: PendingDecision[] = [
+  {
+    id: "DEC-118", time: "08:41:07", actor: "Operations 2 (Dispatcher)", actorKind: "Employee", incident: "SUS-31", technique: "T1078 Valid Accounts",
+    why: "Export of 214 crew profiles at 22:47 from a new laptop; the session touched the honeytoken driver 'D99 Test Account'.",
+    autoAction: "Soft containment: session revoked, fresh passkey required, exports frozen",
+    denyUndoes: "Session allowed, passkey unfrozen, export released",
+    recommendation: "Deny", confidence: 0.64,
+    note: "Model: new laptop matches an IT ticket filed today; the honeytoken row was inside a full-table export, not a targeted read. Likely the employee.",
+    waiting: "22 min · GM alerted at 30 min",
+  },
+  {
+    id: "DEC-117", time: "02:14:09", actor: "45 addresses, 3 countries", actorKind: "Outsider", incident: "INC-2610-07", technique: "T1110.004 Credential Stuffing",
+    why: "Burst of failed logins from a residential proxy pool; every try failed Turnstile or the passkey.",
+    autoAction: "Blocked in the app and at Cloudflare; stricter WAF login rule for 2 h",
+    denyUndoes: "Addresses unblocked; WAF rule back to normal",
+    recommendation: "Approve", confidence: 0.94,
+    note: "No valid credentials used. Keep the stricter rule for 24 h.",
+    waiting: "Block stays until decided",
+  },
+  {
+    id: "DEC-116", time: "Yesterday 15:20", actor: "Noel Aquino (Driver D06)", actorKind: "Crew", incident: "INC-2610-05", technique: "E3 Reused receipt (ArkLinx ID)",
+    why: "Receipt number matches an accepted Oct 14 receipt at the same store; cargo check warns of an empty bay.",
+    autoAction: "Stop and billing held; new live receipt capture requested",
+    denyUndoes: "Stop accepted with the reason recorded; billing released",
+    recommendation: "Approve", confidence: 0.77,
+    note: "Call SM Supermarket Sucat to confirm today's delivery before deciding.",
+    waiting: "18 h · GM alerted",
+  },
+]
+
+// Damage ArkLinx repaired on its own from known-good copies. The admin can undo each one.
+export const autoRepairs = [
+  { id: "REP-42", time: "04:03:49", what: "Public tracking page (/track) defaced", detected: "Page hash did not match the signed release (Lambda page check)", repair: "Redeployed pinned image sha256:9f1c…e07a; purged Cloudflare cache", tookS: 58, state: "Repaired" as const },
+  { id: "REP-41", time: "04:03:12", what: "Partner announcement text replaced", detected: "Audit log: changed by a session flagged in INC-2610-08", repair: "Reverted to the version saved by Christian B. on Oct 18", tookS: 2, state: "Repaired" as const },
+  { id: "REP-40", time: "Oct 19 11:30", what: "WAF login rule switched off", detected: "Nightly check against the approved configuration", repair: "Approved configuration re-applied through the Cloudflare API", tookS: 4, state: "Repaired" as const },
+  { id: "REP-39", time: "Oct 18 21:12", what: "Trip TRP-1012-02 stage edited after Time Out", detected: "Hash chain broke at stage 4", repair: "Prepared: restore from the log would overwrite a later staff note", tookS: 0, state: "Waiting for approval" as const },
+]
+
+// Known flaws: probes against decoys, and findings in ArkLinx's own components (nightly composer audit, npm audit, Trivy).
+export const vulnerabilities = [
+  { cve: "CVE-2021-3129", where: "Probed on decoy /_ignition/execute-solution", component: "Laravel Ignition (old debug page)", cvss: 9.8, kev: true, status: "ArkLinx not affected (Ignition not installed)", due: "—" },
+  { cve: "CVE-2024-4577", where: "Probed on decoy /php-cgi/php-cgi.exe", component: "PHP-CGI on Windows", cvss: 9.8, kev: true, status: "ArkLinx not affected (Linux, PHP-FPM)", due: "—" },
+  { cve: "CVE-2024-6387", where: "Trivy scan of the base image", component: "OpenSSH (regreSSHion)", cvss: 8.1, kev: false, status: "Patch now (no SSH exposed: Cloudflare Tunnel)", due: "Oct 29" },
+]
+
+export const techniqueHeat = [
+  { id: "T1110.004", name: "Credential Stuffing", count: 9 },
+  { id: "T1595.002", name: "Vulnerability Scanning", count: 31 },
+  { id: "T1190", name: "Exploit Public-Facing App", count: 6 },
+  { id: "T1552.001", name: "Credentials In Files", count: 3 },
+  { id: "T1078", name: "Valid Accounts", count: 1 },
+  { id: "T1491.001", name: "Internal Defacement", count: 1 },
+  { id: "AML.T0051", name: "LLM Prompt Injection (ATLAS)", count: 4 },
 ]
 
 export const decoys = [

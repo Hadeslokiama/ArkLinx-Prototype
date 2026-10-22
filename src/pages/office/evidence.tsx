@@ -100,7 +100,7 @@ function ReceiptCase() {
                     <TableCell className="min-w-56">
                       <div className="font-medium">
                         {k.name}
-                        {k.advisory && <span className="ml-1 text-xs font-normal text-muted-foreground">(advisory, Python worker)</span>}
+                        {k.advisory && <span className="ml-1 text-xs font-normal text-muted-foreground">(advisory, Lambda)</span>}
                       </div>
                       <div className="text-xs whitespace-normal text-muted-foreground">{k.detail}</div>
                     </TableCell>
