@@ -28,7 +28,7 @@ export default function Reports() {
     <>
       <PageHeader
         title="Reports and P&L"
-        description="Unit-level and fleet-wide profitability, cost mix and waiting time by site."
+        description="Profit, costs and waiting time." more="Unit-level and fleet-wide profitability, cost mix and waiting time by site."
         actions={
           <>
             <SimpleSelect value={period} onChange={setPeriod} ariaLabel="Period" options={[{ value: "6m", label: "Last 6 months" }, { value: "q3", label: "Q3 2026" }, { value: "ytd", label: "Year to date" }]} />
@@ -113,7 +113,7 @@ export default function Reports() {
           </ChartContainer>
         </Panel>
       </div>
-      <Panel title="Waiting-time heatmap" description="Average minutes from Arrival to Docking by store and hour, this month. Totals only; cells with fewer than 5 visits are hidden. SCSM sees only its own stores.">
+      <Panel title="Waiting-time heatmap" description="Minutes from Arrival to Docking." more="Average minutes from Arrival to Docking by store and hour, this month. Totals only; cells with fewer than 5 visits are hidden. SCSM sees only its own stores.">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[40rem] border-separate border-spacing-1 text-xs">
             <thead>

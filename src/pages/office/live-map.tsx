@@ -51,7 +51,7 @@ export default function LiveMap() {
 
   return (
     <>
-      <PageHeader title="Live map" description="Real-time positions with history playback. Vectras trucks refresh every 30–60 s once the API is connected; phone-only trucks update at each stage button." />
+      <PageHeader title="Live map" description="Where every truck is now." more="Real-time positions with history playback. Vectras trucks refresh every 30–60 s once the API is connected; phone-only trucks update at each stage button." />
       <Tabs defaultValue="live">
         <TabsList>
           <TabsTrigger value="live">Live positions</TabsTrigger>
@@ -80,7 +80,7 @@ export default function LiveMap() {
                   <li key={t.id}>
                     <button
                       onClick={() => setSelected(t.id)}
-                      className={cn("w-full rounded-md p-3 text-left transition-colors hover:bg-muted", selected === t.id ? "bg-brand-blue/10" : "bg-muted/50")}
+                      className={cn("w-full rounded-md p-3 text-left transition-colors hover:bg-muted", selected === t.id ? "bg-secondary" : "bg-muted/50")}
                     >
                       <div className="flex items-center justify-between gap-2">
                         <span className="font-medium text-brand-navy">{t.plate}</span>
@@ -101,7 +101,7 @@ export default function LiveMap() {
           </div>
         </TabsContent>
         <TabsContent value="playback" className="mt-4">
-          <Panel title="NCX 4721 · Oct 16, 07:41–08:53" description="SCSM Cross-Dock, Taguig to SM Hypermarket Bicutan. Replays the stored track; useful for NCAP disputes and route-deviation checks.">
+          <Panel title="NCX 4721 · Oct 16, 07:41–08:53" description="Replay of a stored trip." more="SCSM Cross-Dock, Taguig to SM Hypermarket Bicutan. Replays the stored track; useful for NCAP disputes and route-deviation checks.">
             <FleetMap track={playbackTrack} className="h-[55vh] min-h-80" zoom={13} focus={playbackTrack[step]} label="Placeholder track: sample positions">
               <Marker position={playbackTrack[step]} icon={playIcon} />
             </FleetMap>

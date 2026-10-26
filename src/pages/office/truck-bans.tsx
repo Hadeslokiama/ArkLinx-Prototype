@@ -21,7 +21,7 @@ export default function TruckBans() {
     <>
       <PageHeader
         title="Truck-ban notices"
-        description="Advance notices received under the MOU with LGUs, 1–3 weeks before they take effect. Dispatch is warned when a route passes an LGU with an active notice. ArkLinx does not re-route; SCSM routes are fixed."
+        description="LGU notices, 1–3 weeks ahead." more="Advance notices received under the MOU with LGUs, 1–3 weeks before they take effect. Dispatch is warned when a route passes an LGU with an active notice. ArkLinx does not re-route; SCSM routes are fixed."
         actions={
           <Dialog>
             <DialogTrigger render={<Button />}>
@@ -106,7 +106,7 @@ export default function TruckBans() {
           </Table>
         </TableWrap>
       </Panel>
-      <Panel title="Predefined SCSM corridors" description="LGUs each corridor passes, and the notices that apply. An LGU with no notice shows 'none on file', never 'unrestricted'.">
+      <Panel title="Predefined SCSM corridors" description="LGUs on each corridor." more="LGUs each corridor passes, and the notices that apply. An LGU with no notice shows 'none on file', never 'unrestricted'.">
         <div className="grid gap-3 md:grid-cols-2">
           {routes.map((r) => (
             <div key={r.name} className="rounded-md bg-muted/60 p-3">

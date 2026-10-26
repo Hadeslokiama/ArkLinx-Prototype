@@ -15,7 +15,7 @@ export default function Alerts() {
     <>
       <PageHeader
         title="Alert rules"
-        description="Triggers for route deviation, speeding, idling, unauthorized stops and more. Delivered by email and browser pop-up only; SMS is not used because it can be intercepted or redirected."
+        description="Sent by email and browser pop-up." more="Triggers for route deviation, speeding, idling, unauthorized stops and more. Delivered by email and browser pop-up only; SMS is not used because it can be intercepted or redirected."
         actions={<Button onClick={() => toast.success("Alert rules saved.")}>Save rules</Button>}
       />
       <Panel>

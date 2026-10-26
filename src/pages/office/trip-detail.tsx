@@ -58,7 +58,7 @@ export default function TripDetail() {
       <div className="grid gap-4 xl:grid-cols-[1fr_1.1fr]">
         <Panel title="Stages and evidence" description="Each stage shows its corroboration verdict.">
           <StageTimeline stops={trip.stops} />
-          {trip.delayReason && <p className="mt-3 rounded-md bg-warning/10 px-3 py-2 text-sm text-warning">Delay logged: {trip.delayReason}</p>}
+          {trip.delayReason && <p className="mt-3 rounded-md bg-muted px-3 py-2 text-sm">Delay logged: {trip.delayReason}</p>}
         </Panel>
         <Panel title="Route and geofences">
           <FleetMap trucks={[truck]} sites={tripSites} focus={[truck.lat, truck.lng]} className="h-[28rem]" />

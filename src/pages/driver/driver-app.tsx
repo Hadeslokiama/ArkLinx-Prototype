@@ -22,7 +22,7 @@ import { useEffect, useMemo, useState } from "react"
 import { Link } from "react-router-dom"
 import { toast } from "sonner"
 import { Mark } from "@/components/app/brand"
-import { CameraCapture, type Capture } from "@/components/app/camera-capture"
+import { CameraCapture, type Capture, type PhotoCheck } from "@/components/app/camera-capture"
 import { VerdictBadge } from "@/components/app/status"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet"
@@ -49,25 +49,19 @@ type Done = { time: string; verdict: Verdict; record?: CaptureRecord; checks?: I
 const now = () => new Date().toLocaleTimeString("en-PH", { hour: "2-digit", minute: "2-digit", hour12: false })
 const nowSec = () => new Date().toLocaleTimeString("en-PH", { hour12: false })
 
-function checksFor(kind: "docking" | "receipt", plate: string, siteName: string): ImageCheck[] {
+// Signature and geofence are server checks; the photo checks come from the camera step (advisory, staff decide).
+function checksFor(kind: "docking" | "receipt", siteName: string, photo: PhotoCheck[]): ImageCheck[] {
   const base: ImageCheck[] = [
     { name: "Signature and one-time code", result: "pass", detail: "Signed by this phone's passkey; code used in time" },
     { name: "Inside the store's geofence", result: "pass", detail: `${siteName}, 28 m from center` },
   ]
-  if (kind === "docking")
-    return [
-      ...base,
-      { name: "Truck and plate", result: "pass", detail: `Truck detected; plate read ${plate} matches the assignment`, advisory: true },
-      { name: "Cargo state", result: "pass", detail: "Rear bay loaded (classifier 0.93)", advisory: true },
-      { name: "Liveness (screen or print recapture)", result: "pass", detail: "No moiré or screen edges (score 0.05)", advisory: true },
-      { name: "AI-generated image score", result: "pass", detail: "0.03 · advisory only", advisory: true },
-    ]
+  const advisory = photo.map((c) => ({ name: c.name, result: c.result, detail: c.detail, advisory: true }))
+  if (kind === "docking") return [...base, ...advisory]
   return [
     ...base,
-    { name: "Vendor format", result: "pass", detail: "SM template DR-####### (OCR confidence 0.96)" },
-    { name: "Receipt number", result: "pass", detail: "DR-0418230 never used before" },
+    ...advisory,
+    { name: "Receipt number never used before", result: "pass", detail: "Checked across the fleet" },
     { name: "Receipt date and store", result: "pass", detail: `${TODAY} · ${siteName}` },
-    { name: "Liveness (screen or print recapture)", result: "pass", detail: "Score 0.07", advisory: true },
   ]
 }
 
@@ -154,7 +148,8 @@ export default function DriverApp() {
       setTimeout(() => {
         setPhase("idle")
         setLastPhoto(idx)
-        record({ record: rec, checks: checksFor(kind, truck.plate, site.name), img: c.dataUrl })
+        record({ record: rec, checks: checksFor(kind, site.name, c.checks), img: c.dataUrl })
+        if (c.checks.some((x) => x.result === "warn")) toast.warning("Photo sent with a flag. Staff will review this stop.")
       }, 1100)
     }, 900)
   }
@@ -221,11 +216,11 @@ export default function DriverApp() {
                     <Phone className="size-5" />
                   </a>
                 </div>
-                {site.notes && <p className="mt-3 rounded-md bg-brand-amber/15 px-3 py-2 text-sm text-brand-navy">{site.notes}</p>}
+                {site.notes && <p className="mt-3 rounded-md bg-muted px-3 py-2 text-sm">{site.notes}</p>}
                 <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
-                  <div className={cn("rounded-md px-3 py-2", inside ? "bg-success/10 text-success" : "bg-danger/10 text-danger")}>
-                    <div className="text-xs opacity-80">Geofence</div>
-                    <div className="font-medium">{inside ? "Inside site" : "Outside site"}</div>
+                  <div className="rounded-md bg-muted px-3 py-2">
+                    <div className="text-xs text-muted-foreground">Geofence</div>
+                    <div className="flex items-center gap-1.5 font-medium"><span aria-hidden className={cn("size-1.5 rounded-full", inside ? "bg-success" : "bg-danger")} />{inside ? "Inside site" : "Outside site"}</div>
                   </div>
                   <div className="rounded-md bg-muted px-3 py-2">
                     <div className="text-xs text-muted-foreground">Time on site</div>
@@ -283,7 +278,7 @@ export default function DriverApp() {
                       </li>
                     ))}
                   </ul>
-                  <p className="mt-2 text-[11px] text-muted-foreground">The record is signed by the server and stored beside the photo. The photo itself is never changed.</p>
+                  <p className="mt-2 text-[11px] text-muted-foreground">Signed record kept beside the unchanged photo.</p>
                 </section>
               )}
 
@@ -294,7 +289,7 @@ export default function DriverApp() {
                     const d = done[s.i]
                     const Ic = s.photo ? Camera : stageIcon[s.stage]
                     return (
-                      <li key={s.i} className={cn("flex items-center justify-between gap-2 rounded-md px-3 py-2.5", s.i === idx ? "bg-brand-blue/10" : "bg-muted/50")}>
+                      <li key={s.i} className={cn("flex items-center justify-between gap-2 rounded-md px-3 py-2.5", s.i === idx ? "bg-secondary" : "bg-muted/50")}>
                         <span className="flex items-center gap-2.5">
                           {d ? <CheckCircle2 className="size-5 text-success" /> : <Ic className={cn("size-5", s.i === idx ? "text-brand-blue" : "text-muted-foreground")} />}
                           <span className={cn("text-base", !d && s.i !== idx && "text-muted-foreground")}>
@@ -323,7 +318,7 @@ export default function DriverApp() {
               {showStops && (
                 <ol className="space-y-2">
                   {trip.stops.map((s, i) => (
-                    <li key={i} className={cn("rounded-lg px-4 py-3", i === step.stop ? "bg-brand-blue/10" : "bg-card")}>
+                    <li key={i} className={cn("rounded-lg px-4 py-3", i === step.stop ? "bg-secondary" : "bg-card")}>
                       <div className="text-sm text-muted-foreground">
                         Stop {i + 1} · {s.purpose} · {s.purpose === "Pickup" ? "docking photo" : "docking photo + receipt"}
                       </div>
@@ -361,11 +356,11 @@ export default function DriverApp() {
             <SheetTitle>{step.photo === "receipt" ? "Delivery receipt" : "Docking photo"}</SheetTitle>
             <SheetDescription>
               {step.photo === "receipt"
-                ? "Photograph the vendor's delivery receipt flat, with the receipt number readable. Live camera only."
-                : "Photograph the truck's rear and plate at the dock. Live camera only; faces are not needed."}
+                ? "Receipt flat, number readable."
+                : "Truck rear and plate. No faces needed."}
             </SheetDescription>
           </SheetHeader>
-          <div className="px-4 pb-6">{cameraOpen && step.photo && <CameraCapture kind={step.photo} onCapture={onCapture} />}</div>
+          <div className="px-4 pb-6">{cameraOpen && step.photo && <CameraCapture kind={step.photo} plate={truck.plate} onCapture={onCapture} />}</div>
         </SheetContent>
       </Sheet>
 

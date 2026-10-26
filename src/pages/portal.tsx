@@ -20,9 +20,9 @@ export default function Portal() {
       <main className="mx-auto max-w-6xl px-4 pb-16 sm:px-6">
         <section className="grid gap-8 py-8 lg:grid-cols-[1.1fr_1fr] lg:items-end lg:py-14">
           <div>
-            <h1 className="text-4xl font-semibold tracking-tight text-brand-navy sm:text-6xl">Signed at every stop. Checked by sources the crew don't control.</h1>
+            <h1 className="text-4xl font-semibold tracking-tight text-brand-navy sm:text-6xl">Every stop signed and checked.</h1>
             <p className="mt-4 max-w-xl text-lg text-muted-foreground">
-              Fleet management for CXBC. Each stage, docking photo and delivery receipt is signed on the crew's own phone, then checked against the tracker, the trip plan and the vendor's receipt format. Attacks on the system are contained in milliseconds.
+              Fleet management for CXBC Logistics. Signed on the crew's phone, checked against the tracker.
             </p>
           </div>
           <form
@@ -50,7 +50,7 @@ export default function Portal() {
             <Building2 className="size-8 text-brand-blue" />
             <div>
               <h2 className="text-xl font-semibold text-brand-navy">Office staff</h2>
-              <p className="mt-1 text-sm text-muted-foreground">Dispatch, live map, evidence review, HR, documents, fuel, billing and P&L. The menu changes with the role.</p>
+              <p className="mt-1 text-sm text-muted-foreground">Dispatch, evidence, fleet, HR and billing.</p>
             </div>
             <SimpleSelect
               value={role}
@@ -67,7 +67,7 @@ export default function Portal() {
             <Smartphone className="size-8 text-brand-blue" />
             <div>
               <h2 className="text-xl font-semibold text-brand-navy">Driver and helper</h2>
-              <p className="mt-1 text-sm text-muted-foreground">Open from the trip link each morning. Big stage buttons signed with the phone's screen lock; live camera for the docking photo and the delivery receipt at every store.</p>
+              <p className="mt-1 text-sm text-muted-foreground">One-tap signed stages and live photos. No app.</p>
             </div>
             <Button size="lg" variant="secondary" className="mt-auto h-11 text-base" onClick={() => navigate("/driver")}>
               Open today's trip <ArrowRight />
@@ -77,14 +77,14 @@ export default function Portal() {
             <Truck className="size-8 text-brand-blue" />
             <div>
               <h2 className="text-xl font-semibold text-brand-navy">SCSM and AAI</h2>
-              <p className="mt-1 text-sm text-muted-foreground">Truck requests and a tracking ID for every order, with verified stages, instead of chasing updates on Viber.</p>
+              <p className="mt-1 text-sm text-muted-foreground">Requests and verified stages per order.</p>
             </div>
             <Button size="lg" variant="secondary" className="mt-auto h-11 text-base" onClick={() => navigate("/partner")}>
               Open partner view <ArrowRight />
             </Button>
           </div>
         </section>
-        <p className="mt-8 text-xs text-muted-foreground">Front-end prototype. All trips, people, plates and positions are sample data; maps use placeholder GPS on OpenStreetMap.</p>
+        <p className="mt-8 text-xs text-muted-foreground">Prototype with sample data.</p>
       </main>
     </div>
   )

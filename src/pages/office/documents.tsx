@@ -2,6 +2,7 @@ import { CheckCircle2, ExternalLink, QrCode, ShieldX, Upload, XCircle } from "lu
 import { useState } from "react"
 import { toast } from "sonner"
 import { PageHeader, Panel, Placeholder, Stat, TableWrap } from "@/components/app/page"
+import { C, Donut } from "@/components/app/charts"
 import { DocBadge, Pill } from "@/components/app/status"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -59,12 +60,13 @@ export default function Documents() {
   const queue = crew.flatMap((c) => c.docs.filter((d) => ["pending", "mismatch", "expiring", "expired"].includes(d.status)).map((d) => ({ c, d })))
   const verified = crew.flatMap((c) => c.docs).filter((d) => d.status === "issuer-verified").length
   const screened = crew.flatMap((c) => c.docs).filter((d) => d.status === "screened").length
+  const docCount = (st: CrewDoc["status"]) => crew.flatMap((c) => c.docs).filter((d) => d.status === st).length
 
   return (
     <>
       <PageHeader
         title="Document verification"
-        description="Crew credentials are trusted when their issuer confirms them, not because the scan looks right. QR codes open only official issuer domains; results are stored as evidence and re-checked before dispatch."
+        description="Trusted only when the issuer confirms." more="Crew credentials are trusted when their issuer confirms them, not because the scan looks right. QR codes open only official issuer domains; results are stored as evidence and re-checked before dispatch."
         actions={
           <>
             <Button variant="outline" onClick={() => setActive(forged)}>
@@ -76,11 +78,23 @@ export default function Documents() {
           </>
         }
       />
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Stat label="Issuer-verified" value={verified} tone="success" sub="PhilSys, NBI, PNP, LTO" />
-        <Stat label="Screened only" value={screened} sub="Medical and drug tests: no issuer channel" />
-        <Stat label="Needs action" value={queue.length} tone="warning" sub="Pending, mismatch or expiring" />
-        <Stat label="Mismatches" value={queue.filter((x) => x.d.status === "mismatch").length} tone="danger" sub="Crew blocked from dispatch" />
+      <div className="grid gap-4 lg:grid-cols-[1.5fr_1fr]">
+        <Panel title="Crew documents">
+          <Donut
+            centerLabel="documents"
+            data={[
+              { key: "verified", label: "Issuer-verified", value: verified, color: C.good },
+              { key: "screened", label: "Screened only", value: screened, color: C.slate },
+              { key: "pending", label: "Check pending", value: docCount("pending"), color: C.pale },
+              { key: "expiring", label: "Expiring or expired", value: docCount("expiring") + docCount("expired"), color: C.warn },
+              { key: "mismatch", label: "Issuer mismatch", value: docCount("mismatch"), color: C.bad },
+            ]}
+          />
+        </Panel>
+        <div className="grid gap-4">
+          <Stat label="Needs action" value={queue.length} tone="warning" />
+          <Stat label="Crew blocked" value={queue.filter((x) => x.d.status === "mismatch").length} tone="danger" sub="Issuer mismatch" />
+        </div>
       </div>
       <Panel title="Verification queue">
         <TableWrap>
@@ -154,8 +168,8 @@ function VerifyFlow({ c, onDone }: { c: Case; onDone: () => void }) {
             <QrCode className="size-4" /> 1. QR code decoded from the upload
           </div>
           <p className="mt-1 text-sm break-all text-muted-foreground">{c.qr}</p>
-          <div className={cn("mt-2 flex items-center gap-2 rounded px-2 py-1.5 text-sm", allowed ? "bg-success/10 text-success" : "bg-danger/10 text-danger")}>
-            {allowed ? <CheckCircle2 className="size-4" /> : <ShieldX className="size-4" />}
+          <div className="mt-2 flex items-center gap-2 rounded bg-card px-2 py-1.5 text-sm">
+            {allowed ? <CheckCircle2 className="size-4 shrink-0 text-success" /> : <ShieldX className="size-4 shrink-0 text-danger" />}
             {allowed ? `${h} is an official issuer domain.` : `${h} is not an issuer domain. ArkLinx will not open it. Use the official portal instead.`}
           </div>
         </li>

@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { PageHeader, Panel, Stat, TableWrap } from "@/components/app/page"
+import { C, Donut } from "@/components/app/charts"
 import { SimpleSelect } from "@/components/app/simple-select"
 import { Pill } from "@/components/app/status"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -33,12 +34,20 @@ export default function Compliance() {
   const all = [...trucks.map((t) => daysUntil(t.registrationExpiry)), ...crew.flatMap((c) => c.docs.map((d) => daysUntil(d.expiry)))]
   return (
     <>
-      <PageHeader title="Compliance and expiry" description="Vehicle registrations, permits, insurance, crew licenses and clearances, and company SEC and BIR filings, with warnings 30 days ahead." />
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Stat label="Expired" value={all.filter((d) => d < 0).length} tone="danger" />
-        <Stat label="Within 30 days" value={all.filter((d) => d >= 0 && d <= 30).length} tone="warning" />
-        <Stat label="Within 90 days" value={all.filter((d) => d > 30 && d <= 90).length} />
-        <Stat label="LTO renewal month by plate" value="Plate ends in 1 → January" sub="Derived from plate endings" tone="navy" />
+      <PageHeader title="Compliance and expiry" description="Papers expiring in the next 30 days." more="Vehicle registrations, permits, insurance, crew licenses and clearances, and company SEC and BIR filings, with warnings 30 days ahead." />
+      <div className="grid gap-4 lg:grid-cols-[1.5fr_1fr]">
+        <Panel title="Expiry window">
+          <Donut
+            centerLabel="papers"
+            data={[
+              { key: "expired", label: "Expired", value: all.filter((d) => d < 0).length, color: C.bad },
+              { key: "d30", label: "Within 30 days", value: all.filter((d) => d >= 0 && d <= 30).length, color: C.warn },
+              { key: "d90", label: "Within 90 days", value: all.filter((d) => d > 30 && d <= 90).length, color: C.light },
+              { key: "later", label: "Later", value: all.filter((d) => d > 90).length, color: C.pale },
+            ]}
+          />
+        </Panel>
+        <Stat label="LTO renewal month" value="By plate" sub="Ends in 1 → January, 2 → February" />
       </div>
       <Panel
         actions={

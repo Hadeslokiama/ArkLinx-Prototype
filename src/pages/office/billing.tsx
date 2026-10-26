@@ -12,7 +12,7 @@ export default function Billing() {
   const outstanding = invoices.filter((i) => i.status !== "Paid").reduce((s, i) => s + i.amount, 0)
   return (
     <>
-      <PageHeader title="Billing" description="Invoices built from completed, evidence-backed trips; fuel receipt checks; and trip reconciliation before billing." />
+      <PageHeader title="Billing" description="Invoices from verified trips." more="Invoices built from completed, evidence-backed trips; fuel receipt checks; and trip reconciliation before billing." />
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Stat label="Outstanding" value={peso(outstanding)} tone="navy" />
         <Stat label="Overdue" value={invoices.filter((i) => i.status === "Overdue").length} tone="danger" sub="AAI Sep 16–30" />
@@ -66,7 +66,7 @@ export default function Billing() {
           </Panel>
         </TabsContent>
         <TabsContent value="receipts" className="mt-4">
-          <Panel description="Receipts are photographed by the crew at the pump and checked against liters, station and trip time.">
+          <Panel description="Fuel receipts vs liters and trip time." more="Receipts are photographed by the crew at the pump and checked against liters, station and trip time.">
             <TableWrap>
               <Table>
                 <TableHeader>
@@ -102,7 +102,7 @@ export default function Billing() {
           </Panel>
         </TabsContent>
         <TabsContent value="recon" className="mt-4">
-          <Panel description="A trip is billable when every stop has Release and no stage is Conflicting.">
+          <Panel description="Billable once every stop is verified." more="A trip is billable when every stop has Release and no stage is Conflicting.">
             <TableWrap>
               <Table>
                 <TableHeader>

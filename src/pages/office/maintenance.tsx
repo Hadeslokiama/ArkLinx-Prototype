@@ -30,7 +30,7 @@ export default function Maintenance() {
     <>
       <PageHeader
         title="Maintenance"
-        description="Predictive service scheduling from mileage, work orders, parts and technician logs."
+        description="Service due by mileage." more="Predictive service scheduling from mileage, work orders, parts and technician logs."
         actions={
           <Dialog>
             <DialogTrigger render={<Button />}>

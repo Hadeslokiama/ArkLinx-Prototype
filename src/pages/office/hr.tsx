@@ -15,7 +15,7 @@ export default function HR() {
     <>
       <PageHeader
         title="HR"
-        description="Onboarding, timesheets from Time In and Time Out, performance reviews, and a secure portal for sending and signing paperwork."
+        description="Onboarding, timesheets and paperwork." more="Onboarding, timesheets from Time In and Time Out, performance reviews, and a secure portal for sending and signing paperwork."
         actions={
           <Dialog>
             <DialogTrigger render={<Button />}>
@@ -73,7 +73,7 @@ export default function HR() {
           </div>
         </TabsContent>
         <TabsContent value="timesheets" className="mt-4">
-          <Panel description="Hours come from Time In and Time Out on the driver view. Week of Oct 12–17.">
+          <Panel description="From Time In and Time Out, Oct 12–17." more="Hours come from Time In and Time Out on the driver view. Week of Oct 12–17.">
             <TableWrap>
               <Table>
                 <TableHeader>
@@ -110,7 +110,7 @@ export default function HR() {
           </div>
         </TabsContent>
         <TabsContent value="exchange" className="mt-4">
-          <Panel description="Role-restricted. HR and the GM can send; crew can view and sign only their own files.">
+          <Panel description="HR and the GM send; crew sign their own." more="Role-restricted. HR and the GM can send; crew can view and sign only their own files.">
             <ul className="space-y-2">
               {hrDocuments.map((d) => (
                 <li key={d.title} className="flex flex-col gap-2 rounded-md bg-muted/60 p-3 sm:flex-row sm:items-center sm:justify-between">

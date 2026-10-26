@@ -1,5 +1,6 @@
 import { useState } from "react"
-import { PageHeader, Panel, Stat, TableWrap } from "@/components/app/page"
+import { PageHeader, Panel, TableWrap } from "@/components/app/page"
+import { C, Donut } from "@/components/app/charts"
 import { SimpleSelect } from "@/components/app/simple-select"
 import { GpsBadge, Pill, TruckStatusBadge } from "@/components/app/status"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet"
@@ -33,12 +34,29 @@ export default function Fleet() {
   const list = trucks.filter((t) => status === "all" || t.status === status)
   return (
     <>
-      <PageHeader title="Trucks" description="All 11 six-wheelers with GPS source, service status and registration dates." actions={<SimpleSelect value={status} onChange={setStatus} ariaLabel="Status" options={[{ value: "all", label: "All statuses" }, { value: "on-trip", label: "On trip" }, { value: "available", label: "Available" }, { value: "maintenance", label: "Maintenance" }, { value: "off-duty", label: "Off duty" }]} />} />
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Stat label="Fleet" value="11" sub="6-wheelers, company-owned" tone="navy" />
-        <Stat label="Tracker API live" value="3" sub="Vectras via 5G SIM" tone="success" />
-        <Stat label="Tracker pending" value="2" sub="SSD GPS, client coordinating" tone="warning" />
-        <Stat label="Phone only" value="6" sub="Stages labeled single-source" />
+      <PageHeader title="Trucks" description="All 11 trucks at a glance." more="All 11 six-wheelers with GPS source, service status and registration dates." actions={<SimpleSelect value={status} onChange={setStatus} ariaLabel="Status" options={[{ value: "all", label: "All statuses" }, { value: "on-trip", label: "On trip" }, { value: "available", label: "Available" }, { value: "maintenance", label: "Maintenance" }, { value: "off-duty", label: "Off duty" }]} />} />
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Panel title="Tracker source">
+          <Donut
+            centerLabel="trucks"
+            data={[
+              { key: "vectras", label: "Vectras API", value: 3, color: C.navy },
+              { key: "ssd", label: "SSD GPS (pending)", value: 2, color: C.light },
+              { key: "phone", label: "Phone only", value: 6, color: C.pale },
+            ]}
+          />
+        </Panel>
+        <Panel title="Status now">
+          <Donut
+            centerLabel="trucks"
+            data={[
+              { key: "on-trip", label: "On trip", value: trucks.filter((t) => t.status === "on-trip").length, color: C.blue },
+              { key: "available", label: "Available", value: trucks.filter((t) => t.status === "available").length, color: C.good },
+              { key: "maintenance", label: "Maintenance", value: trucks.filter((t) => t.status === "maintenance").length, color: C.warn },
+              { key: "off-duty", label: "Off duty", value: trucks.filter((t) => t.status === "off-duty").length, color: C.pale },
+            ]}
+          />
+        </Panel>
       </div>
       <Panel>
         <TableWrap>

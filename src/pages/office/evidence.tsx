@@ -3,6 +3,8 @@ import { useState } from "react"
 import { CircleMarker, Polyline, Tooltip } from "react-leaflet"
 import { toast } from "sonner"
 import { FleetMap } from "@/components/app/fleet-map"
+import { Disclosure } from "@/components/app/disclosure"
+import { C, Donut } from "@/components/app/charts"
 import { PageHeader, Panel, Stat, TableWrap } from "@/components/app/page"
 import { Pill, VerdictBadge } from "@/components/app/status"
 import { Button } from "@/components/ui/button"
@@ -35,6 +37,59 @@ const history = [
   { when: "Oct 9, 16:31", trip: "TRP-1009-05", stage: "Release (receipt)", truck: "T01", decision: "Accepted", by: "Christian B.", reason: "Phone accuracy 180 m inside mall; store confirmed receipt by call." },
 ]
 
+type CheckResult = "pass" | "warn" | "fail"
+const resultIcon = { pass: CheckCircle2, warn: CircleAlert, fail: XCircle } as const
+const resultTone = { pass: "text-success", warn: "text-warning", fail: "text-danger" } as const
+
+// Checks at a glance: a pass/warn/fail bar, then one colored chip per check grouped by source. The notes sit in a dropdown.
+function CheckSummary({ items }: { items: { group: string; name: string; result: CheckResult; detail: string }[] }) {
+  const passed = items.filter((i) => i.result === "pass").length
+  const groups = [...new Set(items.map((i) => i.group))]
+  return (
+    <div className="space-y-3">
+      <div>
+        <div className="flex items-baseline justify-between text-sm">
+          <span className="font-medium text-brand-navy">{passed} of {items.length} checks passed</span>
+          <span className="text-xs text-muted-foreground">{items.filter((i) => i.result === "fail").length} failed</span>
+        </div>
+        <div className="mt-1.5 flex h-2 gap-0.5" aria-hidden>
+          {items.map((i) => (
+            <span key={i.group + i.name} className={cn("flex-1 rounded-full", i.result === "pass" ? "bg-success" : i.result === "warn" ? "bg-warning" : "bg-danger")} />
+          ))}
+        </div>
+      </div>
+      {groups.map((g) => (
+        <div key={g}>
+          <div className="mb-1 text-xs font-medium text-muted-foreground">{g}</div>
+          <div className="flex flex-wrap gap-1.5">
+            {items.filter((i) => i.group === g).map((i) => {
+              const Icon = resultIcon[i.result]
+              return (
+                <span key={i.name} title={i.detail} className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-1 text-xs font-medium">
+                  <Icon className={cn("size-3.5", resultTone[i.result])} /> {i.name}
+                </span>
+              )
+            })}
+          </div>
+        </div>
+      ))}
+      <Disclosure label="See each check">
+        <ul className="space-y-1.5">
+          {items.map((i) => {
+            const Icon = resultIcon[i.result]
+            return (
+              <li key={i.group + i.name} className="flex items-start gap-2">
+                <Icon className={cn("mt-0.5 size-4 shrink-0", resultTone[i.result].split(" ")[1])} />
+                <span><span className="font-medium text-brand-navy">{i.group} · {i.name}: </span>{i.detail}</span>
+              </li>
+            )
+          })}
+        </ul>
+      </Disclosure>
+    </div>
+  )
+}
+
 function ReceiptCase() {
   const c = receiptConflict
   const [reason, setReason] = useState("")
@@ -65,53 +120,33 @@ function ReceiptCase() {
             <div className="flex items-center gap-2 font-medium text-brand-navy">
               <ReceiptText className="size-4" /> Signed capture record
             </div>
-            <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
-              <dt className="text-muted-foreground">Latitude, longitude</dt><dd className="tabular-nums">{rec.lat}, {rec.lng} (±{rec.accuracyM} m)</dd>
-              <dt className="text-muted-foreground">Driver, helper</dt><dd>{rec.driver}, {rec.helper}</dd>
-              <dt className="text-muted-foreground">Site</dt><dd>{rec.site}</dd>
-              <dt className="text-muted-foreground">Date and time</dt><dd className="tabular-nums">{rec.date} {rec.time}</dd>
-              <dt className="text-muted-foreground">Order no.</dt><dd>{rec.orderNo}</dd>
-              <dt className="text-muted-foreground">Tracking ID</dt><dd>{rec.trackingId}</dd>
-              <dt className="text-muted-foreground">One-time code</dt><dd className="font-mono">{rec.code}</dd>
-              <dt className="text-muted-foreground">Photo SHA-256</dt><dd className="font-mono">{rec.sha256}</dd>
-              <dt className="text-muted-foreground">Signed by</dt><dd>{rec.device}</dd>
-            </dl>
-            <p className="mt-2 text-xs text-muted-foreground">Record signed with the KMS key and stored beside the photo; the photo bytes are unchanged.</p>
+            <div className="mt-2 flex flex-wrap gap-1.5 text-xs">
+              <Pill tone="success"><CheckCircle2 className="size-3" /> Signed by passkey</Pill>
+              <Pill tone="info">±{rec.accuracyM} m at {rec.site}</Pill>
+              <Pill tone="neutral">{rec.date} {rec.time}</Pill>
+              <Pill tone="neutral">Code {rec.code}</Pill>
+            </div>
+            <Disclosure className="mt-2" label="Full signed record">
+              <dl className="grid grid-cols-2 gap-x-4 gap-y-1">
+                <dt>Latitude, longitude</dt><dd className="tabular-nums text-foreground">{rec.lat}, {rec.lng} (±{rec.accuracyM} m)</dd>
+                <dt>Driver, helper</dt><dd className="text-foreground">{rec.driver}, {rec.helper}</dd>
+                <dt>Order no.</dt><dd className="text-foreground">{rec.orderNo}</dd>
+                <dt>Tracking ID</dt><dd className="text-foreground">{rec.trackingId}</dd>
+                <dt>Photo SHA-256</dt><dd className="font-mono text-foreground">{rec.sha256}</dd>
+                <dt>Signed by</dt><dd className="text-foreground">{rec.device}</dd>
+              </dl>
+              <p className="mt-2 text-xs">Record signed with the KMS key and stored beside the photo; the photo bytes are unchanged.</p>
+            </Disclosure>
           </div>
-          <div className="rounded-md bg-danger/8 p-3 text-sm">
-            <div className="font-medium text-danger">Receipt {c.receiptNo} was already used</div>
+          <div className="rounded-md bg-muted/60 p-3 text-sm">
+            <div className="flex items-center gap-1.5 font-medium text-brand-navy"><span aria-hidden className="size-1.5 rounded-full bg-danger" />Receipt {c.receiptNo} was already used</div>
             <p className="text-muted-foreground">
               First accepted on {c.firstUsed.tripId} ({c.firstUsed.date}) at {c.firstUsed.site}, truck {c.firstUsed.plate}.
             </p>
           </div>
         </div>
         <div className="min-w-0 space-y-3">
-          <TableWrap>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Check</TableHead>
-                  <TableHead>Result</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {c.checks.map((k) => (
-                  <TableRow key={k.name}>
-                    <TableCell className="min-w-56">
-                      <div className="font-medium">
-                        {k.name}
-                        {k.advisory && <span className="ml-1 text-xs font-normal text-muted-foreground">(advisory, Lambda)</span>}
-                      </div>
-                      <div className="text-xs whitespace-normal text-muted-foreground">{k.detail}</div>
-                    </TableCell>
-                    <TableCell>
-                      {k.result === "pass" ? <CheckCircle2 className="size-4 text-success" /> : k.result === "warn" ? <CircleAlert className="size-4 text-warning" /> : <XCircle className="size-4 text-danger" />}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableWrap>
+          <CheckSummary items={c.checks.map((k) => ({ group: k.advisory ? "Advisory (image checks)" : "Required", name: k.name, result: k.result as CheckResult, detail: k.detail }))} />
           <div className="space-y-2">
             <Label htmlFor="reason2">Decision reason (required, saved to the audit log)</Label>
             <Textarea id="reason2" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="For example: called the Sucat receiving lead; no SCSM delivery received today from NCX 4726." />
@@ -151,13 +186,24 @@ export default function Evidence() {
     <>
       <PageHeader
         title="Evidence review"
-        description="Stops whose evidence conflicts: location sources that disagree, or a receipt or photo that fails a check. No single source confirms a stop; image checks are advisory; a person decides."
+        description="Stops clear when sources agree. You decide conflicts."
+        more="Stops whose evidence conflicts: location sources that disagree, or a receipt or photo that fails a check. No single source confirms a stop; image checks are advisory; a person decides."
       />
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Stat label="Corroborated this week" value="142" tone="success" sub="Phone and tracker agree" />
-        <Stat label="Single-source" value="61" tone="warning" sub="Trucks without a tracker" />
-        <Stat label="Conflicting" value={decided ? "1 open" : "2 open"} tone="danger" sub="1 location, 1 receipt · 3 resolved this week" />
-        <Stat label="Median review time" value="6 min" sub="From alert to decision" />
+      <div className="grid gap-4 lg:grid-cols-[1.5fr_1fr]">
+        <Panel title="Stops this week">
+          <Donut
+            centerLabel="stops"
+            data={[
+              { key: "corroborated", label: "Corroborated", value: 142, color: C.good },
+              { key: "single", label: "Single-source (no tracker)", value: 61, color: C.slate },
+              { key: "conflicting", label: "Conflicting", value: 5, color: C.bad },
+            ]}
+          />
+        </Panel>
+        <div className="grid gap-4">
+          <Stat label="Open conflicts" value={decided ? 1 : 2} tone="danger" sub="1 location, 1 receipt" />
+          <Stat label="Median review time" value="6 min" sub="Alert to decision" />
+        </div>
       </div>
 
       <Panel
@@ -196,29 +242,7 @@ export default function Evidence() {
                 </dl>
               </div>
             </div>
-            <TableWrap>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Source</TableHead>
-                    <TableHead>Check</TableHead>
-                    <TableHead>Result</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {checks.map((c) => (
-                    <TableRow key={c.channel + c.check}>
-                      <TableCell className="text-muted-foreground">{c.channel}</TableCell>
-                      <TableCell className="min-w-56">
-                        <div className="font-medium">{c.check}</div>
-                        <div className="text-xs whitespace-normal text-muted-foreground">{c.detail}</div>
-                      </TableCell>
-                      <TableCell>{c.result === "pass" ? <CheckCircle2 className="size-4 text-success" /> : <XCircle className="size-4 text-danger" />}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableWrap>
+            <CheckSummary items={checks.map((c) => ({ group: c.channel, name: c.check, result: c.result, detail: c.detail }))} />
           </div>
           <div className="min-w-0 space-y-3">
             <FleetMap sites={[site]} focus={[14.338, 120.941]} zoom={14} className="h-80" label="Placeholder positions for the review demo">
@@ -276,7 +300,7 @@ export default function Evidence() {
                     <Pill tone={h.decision === "Accepted" ? "success" : "danger"}>{h.decision}</Pill>
                   </TableCell>
                   <TableCell>{h.by}</TableCell>
-                  <TableCell className={cn("min-w-72 text-sm whitespace-normal text-muted-foreground")}>{h.reason}</TableCell>
+                  <TableCell className="min-w-56 whitespace-normal"><Disclosure label="Why">{h.reason}</Disclosure></TableCell>
                 </TableRow>
               ))}
             </TableBody>

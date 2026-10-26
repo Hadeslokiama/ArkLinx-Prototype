@@ -39,7 +39,7 @@ export default function Drivers() {
     <>
       <PageHeader
         title="Drivers and helpers"
-        description="Crew grouped by fleet segment, tagged by skills, with safety and efficiency scorecards from trip data."
+        description="Crew, skills and scorecards." more="Crew grouped by fleet segment, tagged by skills, with safety and efficiency scorecards from trip data."
         actions={
           <Button onClick={() => toast.message("Add crew opens onboarding in HR with document checks.")}>
             <Plus /> Add crew

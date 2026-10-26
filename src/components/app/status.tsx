@@ -3,36 +3,24 @@ import type { DocStatus, GpsProvider, TripStatus, TruckStatus, Verdict } from "@
 
 type Tone = "success" | "warning" | "danger" | "info" | "neutral" | "navy"
 
-const toneClass: Record<Tone, string> = {
-  success: "bg-success/10 text-success",
-  warning: "bg-warning/10 text-warning",
-  danger: "bg-danger/10 text-danger",
-  info: "bg-brand-blue/10 text-brand-blue",
-  neutral: "bg-muted text-muted-foreground",
-  navy: "bg-brand-navy text-white",
+// One quiet pill for every status: neutral ground, ink text, colour only in the dot.
+const dotClass: Record<Tone, string> = {
+  success: "bg-success",
+  warning: "bg-warning",
+  danger: "bg-danger",
+  info: "bg-brand-blue",
+  neutral: "",
+  navy: "bg-brand-navy",
 }
 
 export function Pill({ tone = "neutral", children, className }: { tone?: Tone; children: React.ReactNode; className?: string }) {
   return (
-    <span className={cn("inline-flex h-6 shrink-0 items-center gap-1.5 rounded-full px-2.5 text-xs font-medium whitespace-nowrap", toneClass[tone], className)}>
+    <span className={cn("inline-flex h-6 shrink-0 items-center gap-1.5 rounded-full bg-muted px-2.5 text-xs font-medium whitespace-nowrap text-foreground", className)}>
+      {tone !== "neutral" && <span aria-hidden className={cn("size-1.5 shrink-0 rounded-full", dotClass[tone])} />}
       {children}
     </span>
   )
 }
-
-const dot = (tone: Tone) => (
-  <span
-    aria-hidden
-    className={cn("size-1.5 rounded-full", {
-      "bg-success": tone === "success",
-      "bg-warning": tone === "warning",
-      "bg-danger": tone === "danger",
-      "bg-brand-blue": tone === "info",
-      "bg-muted-foreground": tone === "neutral",
-      "bg-white": tone === "navy",
-    })}
-  />
-)
 
 export const verdictMeta: Record<Verdict, { label: string; tone: Tone; hint: string }> = {
   corroborated: { label: "Corroborated", tone: "success", hint: "Phone and tracker agree" },
@@ -44,10 +32,7 @@ export const verdictMeta: Record<Verdict, { label: string; tone: Tone; hint: str
 export function VerdictBadge({ verdict }: { verdict: Verdict }) {
   const m = verdictMeta[verdict]
   return (
-    <Pill tone={m.tone}>
-      {dot(m.tone)}
-      {m.label}
-    </Pill>
+<Pill tone={m.tone}>{m.label}</Pill>
   )
 }
 

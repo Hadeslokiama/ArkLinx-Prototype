@@ -3,6 +3,7 @@ import { Bar, BarChart, XAxis, YAxis } from "recharts"
 import { Link } from "react-router-dom"
 import { FleetMap, MapLegend } from "@/components/app/fleet-map"
 import { PageHeader, Panel, Stat, TableWrap } from "@/components/app/page"
+import { C, Donut } from "@/components/app/charts"
 import { SeverityPill, TripStatusBadge, VerdictBadge } from "@/components/app/status"
 import { Button } from "@/components/ui/button"
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
@@ -28,7 +29,7 @@ export default function Overview() {
   return (
     <>
       <PageHeader
-        title={`Good morning. ${held} stage needs review.`}
+        title={`Good morning. ${held} ${held === 1 ? "stage needs" : "stages need"} review.`}
         description={`Friday, October 16, 2026 · ${roleLabel(role)} view`}
         actions={
           <Button render={<Link to="/office/evidence" />}>
@@ -50,8 +51,33 @@ export default function Overview() {
         )}
       </div>
 
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Panel title="Trucks now">
+          <Donut
+            centerLabel="trucks"
+            data={[
+              { key: "on-trip", label: "On trip", value: onTrip, color: C.blue },
+              { key: "available", label: "Available", value: trucks.filter((t) => t.status === "available").length, color: C.good },
+              { key: "maintenance", label: "Maintenance", value: trucks.filter((t) => t.status === "maintenance").length, color: C.warn },
+              { key: "off-duty", label: "Off duty", value: trucks.filter((t) => t.status === "off-duty").length, color: C.pale },
+            ]}
+          />
+        </Panel>
+        <Panel title="Today's trips">
+          <Donut
+            centerLabel="trips"
+            data={[
+              { key: "completed", label: "Completed", value: today.filter((t) => t.status === "completed").length, color: C.good },
+              { key: "moving", label: "In transit or on site", value: today.filter((t) => t.status === "in-transit" || t.status === "on-site").length, color: C.blue },
+              { key: "scheduled", label: "Scheduled", value: today.filter((t) => t.status === "scheduled").length, color: C.pale },
+              { key: "held", label: "Held for review", value: held, color: C.bad },
+            ]}
+          />
+        </Panel>
+      </div>
+
       <div className="grid gap-4 xl:grid-cols-[1.4fr_1fr]">
-        <Panel title="Fleet now" description="Truck markers use placeholder positions until the Vectras feed is connected." actions={<Button variant="outline" size="sm" render={<Link to="/office/map" />}>Open live map</Button>}>
+        <Panel title="Fleet now" description="Placeholder positions until Vectras connects." more="Truck markers use placeholder positions until the Vectras feed is connected." actions={<Button variant="outline" size="sm" render={<Link to="/office/map" />}>Open live map</Button>}>
           <FleetMap trucks={trucks} className="h-[22rem] xl:h-[34rem]" />
           <div className="mt-3">
             <MapLegend />
@@ -131,7 +157,7 @@ export default function Overview() {
       </Panel>
 
       {(role === "gm" || role === "billing") && (
-        <Panel title="Net income by month" description="Revenue minus fuel, tolls, labor, maintenance and other costs. October is month to date." actions={<Button variant="outline" size="sm" render={<Link to="/office/reports" />}>Full P&L</Button>}>
+        <Panel title="Net income by month" description="Revenue minus all costs, by month." more="Revenue minus fuel, tolls, labor, maintenance and other costs. October is month to date." actions={<Button variant="outline" size="sm" render={<Link to="/office/reports" />}>Full P&L</Button>}>
           <ChartContainer config={pnlConfig} className="h-60 w-full">
             <BarChart data={monthlyPnl} margin={{ left: 8, right: 8 }}>
               <XAxis dataKey="month" tickLine={false} axisLine={false} />

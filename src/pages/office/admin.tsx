@@ -16,7 +16,7 @@ export default function Admin() {
   const modules = navGroups.flatMap((g) => g.items)
   return (
     <>
-      <PageHeader title="Administration" description="Users and sign-in methods, the role access matrix, the audit log, integrations, keys, privacy and retention, receipt templates and settings." />
+      <PageHeader title="Administration" description="Users, access, logs, keys and privacy." more="Users and sign-in methods, the role access matrix, the audit log, integrations, keys, privacy and retention, receipt templates and settings." />
       <Tabs defaultValue="users">
         <TabsList className="flex-wrap group-data-horizontal/tabs:h-auto">
           <TabsTrigger value="users">Users</TabsTrigger>
@@ -62,7 +62,7 @@ export default function Admin() {
           </Panel>
         </TabsContent>
         <TabsContent value="roles" className="mt-4">
-          <Panel description="Which roles can open each module. Switch roles from the top-right menu to see the menu change.">
+          <Panel description="Which roles open each module." more="Which roles can open each module. Switch roles from the top-right menu to see the menu change.">
             <TableWrap>
               <Table>
                 <TableHeader>
@@ -92,7 +92,7 @@ export default function Admin() {
           </Panel>
         </TabsContent>
         <TabsContent value="audit" className="mt-4">
-          <Panel description="Insert-only, hash-linked records. The latest hash is anchored hourly to storage that cannot be overwritten.">
+          <Panel description="Insert-only, hash-linked log." more="Insert-only, hash-linked records. The latest hash is anchored hourly to storage that cannot be overwritten.">
             <TableWrap>
               <Table>
                 <TableHeader>
@@ -167,7 +167,7 @@ export default function Admin() {
           </div>
         </TabsContent>
         <TabsContent value="keys" className="mt-4">
-          <Panel description="AWS KMS. Each person's data has its own data key, wrapped by K1, K2 or K3; destroying that data key erases every copy, including backups.">
+          <Panel description="One key per person, in AWS KMS." more="AWS KMS. Each person's data has its own data key, wrapped by K1, K2 or K3; destroying that data key erases every copy, including backups.">
             <TableWrap>
               <Table>
                 <TableHeader>
@@ -196,7 +196,7 @@ export default function Admin() {
           </Panel>
         </TabsContent>
         <TabsContent value="privacy" className="mt-4">
-          <Panel description="Retention runs from the day a person leaves, not the day they were hired. Data is erased by destroying the person's key. Approved by CXBC's data protection officer.">
+          <Panel description="Kept from the day a person leaves." more="Retention runs from the day a person leaves, not the day they were hired. Data is erased by destroying the person's key. Approved by CXBC's data protection officer.">
             <TableWrap>
               <Table>
                 <TableHeader>
@@ -226,7 +226,7 @@ export default function Admin() {
         </TabsContent>
         <TabsContent value="receipts" className="mt-4">
           <Panel
-            description="Each vendor's receipt layout, registered from sample receipts. A reused receipt number is Conflicting at once; low-confidence reads go to staff."
+            description="Known receipt layouts per vendor." more="Each vendor's receipt layout, registered from sample receipts. A reused receipt number is Conflicting at once; low-confidence reads go to staff."
             actions={<Button onClick={() => toast.message("Upload 5 to 10 sample receipts from the office scanner and mark the number, date and store fields.")}>Register a vendor</Button>}
           >
             <TableWrap>

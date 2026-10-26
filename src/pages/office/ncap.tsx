@@ -25,19 +25,19 @@ export default function Ncap() {
     <>
       <PageHeader
         title="NCAP"
-        description="The MMDA NCAP website shows a penalty only after the truck's OR/CR is submitted, so the check is manual: staff check each truck weekly, and whenever an MMDA message arrives. ArkLinx keeps the OR/CRs on file and matches each penalty to the trip, crew and track at that time."
+        description="Penalties matched to the driver." more="The MMDA NCAP website shows a penalty only after the truck's OR/CR is submitted, so the check is manual: staff check each truck weekly, and whenever an MMDA message arrives. ArkLinx keeps the OR/CRs on file and matches each penalty to the trip, crew and track at that time."
       />
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Stat label="Penalties this month" value={ncapNotices.length} tone="navy" />
+        <Stat label="Penalties this month" value={ncapNotices.length} />
         <Stat label="Matched to a driver" value={ncapNotices.filter((n) => n.matchedDriverId).length} tone="success" />
         <Stat label="Unmatched" value={ncapNotices.filter((n) => n.status === "Unmatched").length} tone="danger" sub="Truck used outside a trip" />
-        <Stat label="Weekly checks due" value={trucks.filter((t) => due(lastChecked[t.id]) && !checked[t.id]).length} tone="warning" sub="Check on the MMDA website" />
+        <Stat label="Weekly checks due" value={trucks.filter((t) => due(lastChecked[t.id]) && !checked[t.id]).length} tone="warning" />
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[1fr_1.2fr]">
         <Panel
           title="Weekly check"
-          description="Open the MMDA NCAP website, submit the truck's OR/CR, then mark it checked. MMDA texts and emails are only a prompt; never open their links."
+          description="Weekly OR/CR check on the MMDA site." more="Open the MMDA NCAP website, submit the truck's OR/CR, then mark it checked. MMDA texts and emails are only a prompt; never open their links."
           actions={
             <Button variant="outline" size="sm" render={<a href="https://mmda.gov.ph" target="_blank" rel="noreferrer" />}>
               <ExternalLink /> MMDA website
@@ -82,7 +82,7 @@ export default function Ncap() {
           </TableWrap>
         </Panel>
 
-        <Panel title="Record a penalty found on the MMDA website" description="Copy what the site shows and attach a screenshot. ArkLinx then finds who was driving.">
+        <Panel title="Record a penalty found on the MMDA website" description="Copy the penalty; ArkLinx finds the driver." more="Copy what the site shows and attach a screenshot. ArkLinx then finds who was driving.">
           <form
             className="grid gap-3 sm:grid-cols-2"
             onSubmit={(e) => {

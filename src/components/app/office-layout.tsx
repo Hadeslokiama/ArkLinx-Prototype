@@ -64,7 +64,7 @@ function NavContent() {
                       <item.icon />
                       <span>{item.title}</span>
                     </SidebarMenuButton>
-                    {item.badge && <SidebarMenuBadge className="bg-brand-amber text-brand-navy">{item.badge}</SidebarMenuBadge>}
+                    {item.badge && <SidebarMenuBadge className="bg-white/15 text-white">{item.badge}</SidebarMenuBadge>}
                   </SidebarMenuItem>
                 )
               })}

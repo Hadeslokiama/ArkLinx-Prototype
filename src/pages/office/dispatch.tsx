@@ -75,7 +75,7 @@ export default function Dispatch() {
     <>
       <PageHeader
         title="Dispatch"
-        description="Truck requests from SCSM and AAI. Each assignment passes a readiness check of registration, crew documents, truck-ban notices and GPS source."
+        description="Truck requests from SCSM and AAI." more="Truck requests from SCSM and AAI. Each assignment passes a readiness check of registration, crew documents, truck-ban notices and GPS source."
         actions={
           <Button onClick={() => toast.message("New request form: client, vendor, date, number of trucks, stores.")}>
             <Plus /> New request
@@ -152,7 +152,7 @@ export default function Dispatch() {
           </div>
           <ul className="space-y-1.5">
             {checks.map((c) => (
-              <li key={c.label} className={cn("flex items-start gap-2 rounded-md px-3 py-2 text-sm", c.state === "fail" ? "bg-danger/8" : c.state === "warn" ? "bg-warning/8" : "bg-muted/60")}>
+              <li key={c.label} className={cn("flex items-start gap-2 rounded-md px-3 py-2 text-sm", "bg-muted/60")}>
                 <span className="mt-0.5">{icon[c.state]}</span>
                 <span className="min-w-0">
                   <span className="font-medium">{c.label}</span>

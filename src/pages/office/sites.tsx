@@ -25,7 +25,7 @@ export default function Sites() {
     <>
       <PageHeader
         title="Sites and geofences"
-        description="Saved points of interest with a geofence each. Arrival, the docking photo and the Release receipt are checked against these perimeters; pins carry contacts and notes."
+        description="Stores and their geofences." more="Saved points of interest with a geofence each. Arrival, the docking photo and the Release receipt are checked against these perimeters; pins carry contacts and notes."
         actions={
           <Button onClick={() => toast.message("Click on the map to drop a pin, then fill in the site profile.")}>
             <MapPinPlus /> Add site
@@ -42,7 +42,7 @@ export default function Sites() {
                     setSelected(x.id)
                     setRadius(x.radiusM)
                   }}
-                  className={cn("w-full rounded-md p-3 text-left hover:bg-muted", selected === x.id ? "bg-brand-blue/10" : "bg-muted/50")}
+                  className={cn("w-full rounded-md p-3 text-left hover:bg-muted", selected === x.id ? "bg-secondary" : "bg-muted/50")}
                 >
                   <div className="flex items-center justify-between gap-2">
                     <span className="font-medium text-brand-navy">{x.name}</span>

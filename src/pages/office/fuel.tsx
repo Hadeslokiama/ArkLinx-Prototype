@@ -17,7 +17,7 @@ export default function FuelPage() {
   const totalL = rows.reduce((s, r) => s + r.receiptL, 0)
   return (
     <>
-      <PageHeader title="Fuel and trip costing" description="Trip kilometers come from the Vectras route where a tracker exists, otherwise from odometer entries. Consumed fuel is compared with the truck's expected rate." />
+      <PageHeader title="Fuel and trip costing" description="Fuel used vs expected, per trip." more="Trip kilometers come from the Vectras route where a tracker exists, otherwise from odometer entries. Consumed fuel is compared with the truck's expected rate." />
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Stat label="Fleet efficiency (7 days)" value={`${(totalKm / totalL).toFixed(1)} km/L`} tone="navy" />
         <Stat label="Trips over 10% variance" value={flagged.length} tone={flagged.length ? "danger" : "success"} />
